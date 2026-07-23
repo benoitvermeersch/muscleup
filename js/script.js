@@ -266,7 +266,7 @@ const CATEGORIES = [
    Layout engine: radial tidy-tree fanned into an upward "V" wedge
    --------------------------------------------------------------------- */
 const CIRCLE_R = 32;  // skill node radius
-const LABEL_H  = 36;  // space under each circle for the name
+const LABEL_H  = 52;  // space under each circle for the name + progress bar
 const FO_W     = 126; // node footprint width (for bounding box)
 const BASE_R = 340;   // radius of the first ring (depth 1)
 const RING   = 240;   // distance between rings
@@ -479,14 +479,26 @@ function renderCategorySVG(cat) {
       : lockGlyph(c.x, c.y);
 
     const lines = wrapLabel(n.label);
-    const ly = c.y + CIRCLE_R + 13;
+    const ly = c.y + CIRCLE_R + 15;
     const label = lines.map((ln, i) =>
-      `<tspan x="${c.x.toFixed(1)}" dy="${i === 0 ? 0 : 11}">${esc(ln)}</tspan>`).join("");
+      `<tspan x="${c.x.toFixed(1)}" dy="${i === 0 ? 0 : 13}">${esc(ln)}</tspan>`).join("");
+
+    // progress bar under the name — fills toward Mastered, in the category colour
+    const total = REPS_PER_RANK * (RANKS.length - 1);
+    const prog = unlocked ? Math.min(1, reps / total) : 0;
+    const barW = 52, barH = 5;
+    const barY = ly + (lines.length - 1) * 13 + 9;
+    const barX = c.x - barW / 2;
+    const bar = `<g class="skill-bar">` +
+      `<rect class="skill-bar__track" x="${barX.toFixed(1)}" y="${barY.toFixed(1)}" width="${barW}" height="${barH}" rx="${barH / 2}"/>` +
+      (prog > 0 ? `<rect class="skill-bar__fill" x="${barX.toFixed(1)}" y="${barY.toFixed(1)}" width="${(barW * prog).toFixed(1)}" height="${barH}" rx="${barH / 2}"/>` : "") +
+      `</g>`;
 
     svg += `<g class="${cls.join(" ")}" data-node="${cat.key}:${n.id}" style="--fam:${cat.color}">` +
       `<circle class="skill-dot" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${CIRCLE_R}"/>` +
       inner +
       `<text class="skill-dot__label" x="${c.x.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle">${label}</text>` +
+      bar +
       `</g>`;
   });
 
@@ -532,6 +544,7 @@ function initSkillTree() {
   const boxes = [];
   let box = { x: 0, y: 0, w: 1000, h: 1000 };
   let vb  = { x: 0, y: 0, w: 100, h: 100 };
+  let homeW = 1500;   // viewBox width of the default (home) view, for zoom-out limits
 
   svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
   const targetIndex = () => ((Math.round(targetPos) % N) + N) % N;
@@ -558,6 +571,7 @@ function initSkillTree() {
     const sh = stage.clientHeight || 700;
     const viewH = BASE_R + RING * 2.4;
     const viewW = viewH * (sw / sh);
+    homeW = viewW;
     vb = { x: -viewW / 2, y: -viewH, w: viewW, h: viewH };  // bottom at y=0 (top of START circle base)
     applyViewBox();
   }
@@ -759,7 +773,10 @@ function initSkillTree() {
     return { x: p.x, y: p.y };
   }
   function zoomAround(ux, uy, factor) {
-    const minW = box.w * 0.16, maxW = box.w * 1.3;   // limit how far you can zoom out
+    // halve the zoom-out distance measured from the default (home) view
+    const prevMaxW = box.w * 1.3;
+    const minW = box.w * 0.16;
+    const maxW = Math.max(homeW, homeW + 0.5 * (prevMaxW - homeW));
     let w = Math.min(Math.max(vb.w * factor, minW), maxW);
     const f = w / vb.w;
     vb.x = ux - (ux - vb.x) * f;
