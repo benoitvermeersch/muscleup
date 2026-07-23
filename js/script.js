@@ -369,6 +369,28 @@ function esc(s) {
 }
 function fam(node) { return FAMILY[node.fam] || { name: node.fam, color: "#8a93a3" }; }
 
+// wrap a skill name onto at most two centred lines
+function wrapLabel(s) {
+  const words = String(s).split(" ");
+  const MAX = 15;
+  const lines = [];
+  let cur = "";
+  for (const w of words) {
+    if (cur && (cur.length + 1 + w.length) > MAX) { lines.push(cur); cur = w; }
+    else cur = cur ? cur + " " + w : w;
+  }
+  if (cur) lines.push(cur);
+  if (lines.length > 2) { lines[1] = lines.slice(1).join(" "); lines.length = 2; }
+  return lines;
+}
+
+// padlock drawn as a native SVG path, centred on (cx, cy)
+function lockGlyph(cx, cy) {
+  const s = 0.92;
+  return `<g class="skill-lock" transform="translate(${(cx - 12 * s).toFixed(1)},${(cy - 12 * s).toFixed(1)}) scale(${s})">` +
+    '<path d="M12 2a5 5 0 0 0-5 5v3H6.5A2.5 2.5 0 0 0 4 12.5v6A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-6A2.5 2.5 0 0 0 17.5 10H17V7a5 5 0 0 0-5-5zm3 8H9V7a3 3 0 0 1 6 0v3z"/></g>';
+}
+
 function trimLine(from, to, offFrom, offTo) {
   const dx = to.x - from.x, dy = to.y - from.y;
   const len = Math.hypot(dx, dy) || 1;
@@ -425,37 +447,46 @@ function renderCategorySVG(cat) {
   });
   svg += edges;
 
-  // --- AND / OR chips ---
+  // --- AND / OR chips (native SVG) ---
   cat.nodes.forEach((n) => {
     if (!n.connector) return;
     const c = pos.get(n.id);
     const len = Math.hypot(c.x, c.y) || 1;
     const ux = -c.x / len, uy = -c.y / len; // toward origin
-    const cx = c.x + ux * (CIRCLE_R + 12);
-    const cy = c.y + uy * (CIRCLE_R + 12);
-    svg += `<foreignObject x="${(cx - 19).toFixed(1)}" y="${(cy - 9).toFixed(1)}" width="38" height="18" class="node-fo">` +
-           `<div xmlns="http://www.w3.org/1999/xhtml" class="tt-chip">${n.connector}</div></foreignObject>`;
+    const cx = c.x + ux * (CIRCLE_R + 13);
+    const cy = c.y + uy * (CIRCLE_R + 13);
+    svg += `<g class="tt-chip"><rect x="${(cx - 17).toFixed(1)}" y="${(cy - 9).toFixed(1)}" width="34" height="18" rx="9"/>` +
+      `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" dy="0.32em" text-anchor="middle">${n.connector}</text></g>`;
   });
 
-  // --- nodes: circle with an exercise icon, name underneath ---
-  const foW = FO_W, foH = CIRCLE_R * 2 + LABEL_H;
+  // --- nodes: circle with an exercise icon, name underneath (native SVG) ---
+  const foW = FO_W;
   cat.nodes.forEach((n) => {
     const c = pos.get(n.id);
     const f = fam(n);
     const unlocked = isUnlocked(cat, n);
     const reps = repsOf(cat.key, n.id);
     const mastered = unlocked && rankIndex(reps) >= RANKS.length - 1;
-    const cls = ["skill-circle"];
+    const cls = ["skill-node"];
     if (n.legendary) cls.push("is-legendary");
     if (!unlocked) cls.push("is-locked");
     if (mastered) cls.push("is-mastered");
+
     const inner = unlocked
-      ? `<span class="skill-circle__icon">${f.icon || "•"}</span>`
-      : LOCK_SVG;
-    svg += `<foreignObject class="node-fo" x="${(c.x - foW / 2).toFixed(1)}" y="${(c.y - CIRCLE_R).toFixed(1)}" width="${foW}" height="${foH}">` +
-      `<div xmlns="http://www.w3.org/1999/xhtml" class="skill-circle-wrap" data-node="${cat.key}:${n.id}" role="button" tabindex="0">` +
-      `<div class="${cls.join(" ")}" style="--fam:${f.color}">${inner}</div>` +
-      `<span class="skill-circle__label">${esc(n.label)}</span></div></foreignObject>`;
+      ? `<text class="skill-dot__icon" x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" dy="0.34em" text-anchor="middle">${f.icon || "•"}</text>`
+      : lockGlyph(c.x, c.y);
+
+    const lines = wrapLabel(n.label);
+    const ly = c.y + CIRCLE_R + 13;
+    const label = lines.map((ln, i) =>
+      `<tspan x="${c.x.toFixed(1)}" dy="${i === 0 ? 0 : 11}">${esc(ln)}</tspan>`).join("");
+
+    svg += `<g class="${cls.join(" ")}" data-node="${cat.key}:${n.id}" style="--fam:${f.color}">` +
+      `<circle class="skill-dot" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${CIRCLE_R}"/>` +
+      inner +
+      (mastered ? `<text class="skill-dot__star" x="${(c.x + CIRCLE_R - 4).toFixed(1)}" y="${(c.y + CIRCLE_R - 2).toFixed(1)}">★</text>` : "") +
+      `<text class="skill-dot__label" x="${c.x.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle">${label}</text>` +
+      `</g>`;
   });
 
   // content bounding box
@@ -620,7 +651,7 @@ function initSkillTree() {
     overlay.classList.add("is-open");
     overlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("is-locked");
-    requestAnimationFrame(() => { build(); updateChrome(); home(); });
+    requestAnimationFrame(() => { build(); updateChrome(); home(); requestAnimationFrame(layoutWheel); });
   }
   function close() { closePopup(); overlay.classList.remove("is-open"); overlay.setAttribute("aria-hidden", "true"); document.body.classList.remove("is-locked"); }
 
