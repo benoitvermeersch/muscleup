@@ -771,6 +771,71 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 /* nodes rendered via foreignObject */
 .node-fo { overflow: visible; }
+
+/* circular skill node: icon in the circle, name underneath */
+.skill-circle-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.skill-circle {
+  --fam: #8a93a3;
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tt-node);
+  border: 2.5px solid var(--fam);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.22), inset 0 0 0 3px color-mix(in srgb, var(--fam) 14%, transparent);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.skill-circle:hover {
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  z-index: 5;
+}
+.skill-circle__icon {
+  font-size: 24px;
+  line-height: 1;
+  filter: saturate(1.05);
+}
+.skill-circle__lock {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  font-size: 13px;
+  background: var(--tt-panel);
+  border-radius: 50%;
+  line-height: 1;
+  padding: 1px;
+}
+.skill-circle.is-locked {
+  opacity: 0.72;
+  border-style: dashed;
+}
+.skill-circle.is-legendary {
+  background: radial-gradient(circle at 35% 30%, #ffe9a3, #f6c445 55%, #e0a92c);
+  border-color: #b9891f;
+  box-shadow: 0 0 0 2px rgba(201,166,58,0.4), 0 3px 14px rgba(224,169,44,0.45);
+}
+.skill-circle__label {
+  margin-top: 6px;
+  max-width: 112px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 10.5px;
+  line-height: 1.12;
+  color: var(--tt-node-text);
+  background: var(--tt-stage);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+.skill-circle.is-legendary + .skill-circle__label { color: var(--tt-node-text); }
 .skill-node {
   --fam: #8a93a3;
   box-sizing: border-box;
@@ -895,12 +960,17 @@ ul { margin: 0; padding: 0; list-style: none; }
   color: var(--text-dim);
 }
 .tree-legend__sw {
-  width: 12px; height: 12px;
-  border-radius: 3px;
+  width: 13px; height: 13px;
+  border-radius: 50%;
   background: var(--sw, #888);
-  border: 1px solid rgba(0,0,0,0.15);
+  border: 2px solid var(--sw, #888);
+  box-shadow: inset 0 0 0 2px var(--tt-node);
 }
-.tree-legend__sw--legendary { background: linear-gradient(135deg, #ffe28a, #e0a92c); }
+.tree-legend__sw--legendary {
+  background: linear-gradient(135deg, #ffe28a, #e0a92c);
+  border-color: #caa23a;
+  box-shadow: none;
+}
 .tree-legend__sep { width: 1px; height: 16px; background: var(--border); }
 
 .tree-zoom { display: flex; align-items: center; gap: 6px; }
