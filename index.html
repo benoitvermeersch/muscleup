@@ -25,10 +25,16 @@
     </a>
     <nav class="nav__links" aria-label="Primary">
       <a href="#how-it-works">How it works</a>
-      <a href="#categories">Skill Tree</a>
+      <a href="#" data-open-tree>Skill Tree</a>
       <a href="#ai">AI Coach</a>
     </nav>
-    <a class="btn btn--small btn--primary" href="#join">Join the Waitlist</a>
+    <div class="nav__tools">
+      <div class="theme-toggle" role="group" aria-label="Color theme">
+        <button class="theme-toggle__btn" data-theme-set="light" aria-pressed="false"><span class="ico">☀</span>Light</button>
+        <button class="theme-toggle__btn" data-theme-set="dark" aria-pressed="true"><span class="ico">☾</span>Dark</button>
+      </div>
+      <a class="btn btn--small btn--primary" href="#join">Join the Waitlist</a>
+    </div>
   </div>
 </header>
 
@@ -42,7 +48,7 @@
         <h1 class="hero__title">Level Up<br><span class="grad-text">Your Body</span></h1>
         <p class="hero__desc">A skill tree to help you unlock calisthenics, isometrics and strengthen your body — with AI guidance along the way.</p>
         <div class="hero__actions">
-          <a href="#join" class="btn btn--primary btn--lg">Start Your Journey</a>
+          <button type="button" class="btn btn--primary btn--lg" data-open-tree>Show the Skill Tree</button>
           <a href="#how-it-works" class="btn btn--ghost btn--lg">See How It Works</a>
         </div>
         <div class="hero__stats">
@@ -182,7 +188,10 @@
         </article>
       </div>
 
-      <p class="categories__note">The full skill tree — with every node, prerequisite and progression — is coming soon.</p>
+      <div class="categories__cta">
+        <button type="button" class="btn btn--primary btn--lg" data-open-tree>Show the Skill Tree</button>
+      </div>
+      <p class="categories__note">Swipe through each branch as a living skill wheel — every node, prerequisite and progression.</p>
     </div>
   </section>
 
@@ -233,6 +242,54 @@
     <p>&copy; 2026 MuscleUp. Level up your body.</p>
   </div>
 </footer>
+
+<!-- SKILL TREE OVERLAY -->
+<div class="tree-overlay" id="tree-overlay" role="dialog" aria-modal="true" aria-label="Skill tree" aria-hidden="true">
+  <div class="tree-overlay__chrome">
+    <div class="tree-chrome__left">
+      <button class="tree-close" id="tree-close" aria-label="Close skill tree">✕</button>
+      <div class="tree-chrome__title">
+        <small>MuscleUp</small>
+        <strong>Skill Tree</strong>
+      </div>
+      <div class="theme-toggle" role="group" aria-label="Color theme">
+        <button class="theme-toggle__btn" data-theme-set="light" aria-pressed="false"><span class="ico">☀</span>Light</button>
+        <button class="theme-toggle__btn" data-theme-set="dark" aria-pressed="true"><span class="ico">☾</span>Dark</button>
+      </div>
+    </div>
+
+    <div class="tree-switch">
+      <button class="tree-switch__btn" id="tree-prev" aria-label="Previous branch">‹</button>
+      <div class="tree-switch__center">
+        <div class="tree-switch__icon" id="tree-cat-icon">💪</div>
+        <div class="tree-switch__name">
+          <span id="tree-cat-name">Push</span>
+          <span class="tree-switch__check" id="tree-cat-check" title="Branch complete">✓</span>
+        </div>
+        <div class="tree-switch__meta" id="tree-cat-meta">Branch 1 / 5</div>
+      </div>
+      <button class="tree-switch__btn" id="tree-next" aria-label="Next branch">›</button>
+    </div>
+
+    <div class="tree-chrome__right">
+      <div class="tree-dots" id="tree-dots" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <div class="tree-stage" id="tree-stage">
+    <svg id="tree-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="tree-hint">Drag to pan · scroll to zoom · ‹ › or swipe to switch branch</div>
+  </div>
+
+  <div class="tree-footer">
+    <div class="tree-legend" id="tree-legend"></div>
+    <div class="tree-zoom">
+      <button class="tree-zoom__btn" id="tree-zoom-out" aria-label="Zoom out">−</button>
+      <button class="tree-zoom__btn" id="tree-zoom-reset" aria-label="Reset view">⤢</button>
+      <button class="tree-zoom__btn" id="tree-zoom-in" aria-label="Zoom in">+</button>
+    </div>
+  </div>
+</div>
 
 <script src="js/script.js"></script>
 </body>
