@@ -273,6 +273,7 @@ const RING   = 240;   // distance between rings
 const CENTER_ANGLE = -Math.PI / 2;         // wedge points straight up
 const WEDGE_SPAN = (110 * Math.PI) / 180;  // every branch is exactly 110° wide
 const ROT_STEP   = 122;                     // deg between adjacent wedges in the carousel
+const R_START = 150;                        // radius of the START base circle at the wedge vertex
 
 // progression: every 200 reps is a new rank; reaching Novice (200) unlocks the next skill
 const RANKS = ["Beginner", "Novice", "Intermediate", "Advanced", "Mastered"];
@@ -435,7 +436,7 @@ function renderCategorySVG(cat) {
   cat.nodes.forEach((n) => {
     const c = pos.get(n.id);
     const parent = pos.get(n.parent) || pos.get("START");
-    const offFrom = n.parent === "START" ? 32 : OFF;
+    const offFrom = n.parent === "START" ? R_START : OFF;
     const l = trimLine(parent, c, offFrom, OFF);
     edges += `<line class="tt-edge" x1="${l.x1.toFixed(1)}" y1="${l.y1.toFixed(1)}" x2="${l.x2.toFixed(1)}" y2="${l.y2.toFixed(1)}" marker-end="url(#tt-arrow)"/>`;
     (n.extra || []).forEach((exId) => {
@@ -481,7 +482,7 @@ function renderCategorySVG(cat) {
     const label = lines.map((ln, i) =>
       `<tspan x="${c.x.toFixed(1)}" dy="${i === 0 ? 0 : 11}">${esc(ln)}</tspan>`).join("");
 
-    svg += `<g class="${cls.join(" ")}" data-node="${cat.key}:${n.id}" style="--fam:${f.color}">` +
+    svg += `<g class="${cls.join(" ")}" data-node="${cat.key}:${n.id}" style="--fam:${cat.color}">` +
       `<circle class="skill-dot" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${CIRCLE_R}"/>` +
       inner +
       (mastered ? `<text class="skill-dot__star" x="${(c.x + CIRCLE_R - 4).toFixed(1)}" y="${(c.y + CIRCLE_R - 2).toFixed(1)}">★</text>` : "") +
@@ -533,8 +534,23 @@ function initSkillTree() {
   let vb  = { x: 0, y: 0, w: 100, h: 100 };
 
   svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-  const applyViewBox = () => svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
   const targetIndex = () => ((Math.round(targetPos) % N) + N) % N;
+
+  // keep panning inside the wedge: horizontal within its width, vertical within
+  // its height, and never below the middle of the START base circle (y = 0)
+  function clampView() {
+    if (box.w <= 1) return;
+    const bx0 = box.x, bx1 = box.x + box.w;
+    const by0 = box.y, by1 = 0;                 // bottom limit = START centre
+    if (vb.w >= bx1 - bx0) vb.x = (bx0 + bx1) / 2 - vb.w / 2;
+    else vb.x = Math.min(Math.max(vb.x, bx0), bx1 - vb.w);
+    if (vb.h >= by1 - by0) vb.y = by1 - vb.h;    // taller than region → pin bottom to y=0
+    else vb.y = Math.min(Math.max(vb.y, by0), by1 - vb.h);
+  }
+  function applyViewBox() {
+    clampView();
+    svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+  }
 
   // default landing view: zoomed in on START + the first rings
   function home() {
@@ -542,7 +558,7 @@ function initSkillTree() {
     const sh = stage.clientHeight || 700;
     const viewH = BASE_R + RING * 2.4;
     const viewW = viewH * (sw / sh);
-    vb = { x: -viewW / 2, y: 110 - viewH, w: viewW, h: viewH };
+    vb = { x: -viewW / 2, y: -viewH, w: viewW, h: viewH };  // bottom at y=0 (top of START circle base)
     applyViewBox();
   }
 
@@ -556,7 +572,8 @@ function initSkillTree() {
       inner += `<g class="tt-wedge" data-wi="${i}">${markup}</g>`;
     });
     inner += `</g>`;
-    inner += `<g class="tt-start"><circle cx="0" cy="0" r="31"/><text x="0" y="4">START</text></g>`;
+    inner += `<g class="tt-start"><circle cx="0" cy="0" r="${R_START}"/>` +
+      `<text x="0" y="${(-R_START * 0.42).toFixed(0)}">START</text></g>`;
     svg.innerHTML = inner;
     wedgeEls = Array.from(svg.querySelectorAll(".tt-wedge"));
     layoutWheel();
@@ -570,7 +587,7 @@ function initSkillTree() {
       const theta = (iu - pos) * ROT_STEP;            // degrees around origin
       el.setAttribute("transform", `rotate(${theta.toFixed(2)})`);
       const a = Math.abs(theta);
-      let op = a < 1 ? 1 : Math.max(0.14, 1 - a / (ROT_STEP * 1.12));
+      let op = a < 1 ? 1 : Math.max(0.34, 1 - a / (ROT_STEP * 1.55));
       if (a > ROT_STEP * 1.6) op = 0;
       el.style.opacity = op.toFixed(3);
       const isCenter = a < ROT_STEP * 0.5;
@@ -592,15 +609,11 @@ function initSkillTree() {
   }
 
   function buildLegend(cat) {
-    const seen = [];
-    cat.nodes.forEach((n) => { if (!seen.includes(n.fam)) seen.push(n.fam); });
-    let html = seen.map((k) => {
-      const f = FAMILY[k];
-      return `<span class="tree-legend__item"><span class="tree-legend__sw" style="--sw:${f.color}"></span>${esc(f.name)}</span>`;
-    }).join("");
-    html += `<span class="tree-legend__sep"></span>`;
-    html += `<span class="tree-legend__item"><span class="tree-legend__sw tree-legend__sw--legendary"></span>Legendary</span>`;
+    let html = `<span class="tree-legend__item"><span class="tree-legend__sw" style="--sw:${cat.color}"></span>${esc(cat.label)} skill</span>`;
+    html += `<span class="tree-legend__item"><span class="tree-legend__sw tree-legend__sw--gold"></span>Mastered</span>`;
     html += `<span class="tree-legend__item"><span class="tree-legend__lock">${LOCK_SVG}</span>Locked — train the previous skill</span>`;
+    if (cat.nodes.some((n) => n.connector))
+      html += `<span class="tree-legend__item">AND / OR prerequisite</span>`;
     legendEl.innerHTML = html;
   }
 
@@ -679,10 +692,11 @@ function initSkillTree() {
     const into = reps % REPS_PER_RANK;
     const isMax = ri >= RANKS.length - 1;
 
+    const badgeCls = unlocked ? (isMax ? "is-mastered" : "") : "is-locked";
     let html = `<div class="pop-head">` +
-      `<div class="pop-badge ${unlocked ? "" : "is-locked"} ${node.legendary ? "is-legendary" : ""}" style="--fam:${f.color}">${unlocked ? (f.icon || "•") : LOCK_SVG}</div>` +
+      `<div class="pop-badge ${badgeCls}" style="--fam:${cat.color}">${unlocked ? (f.icon || "•") : LOCK_SVG}</div>` +
       `<div><h3 class="pop-name">${esc(node.label)}</h3>` +
-      `<div class="pop-sub">${esc(f.name)}${node.legendary ? " · Legendary" : ""}</div></div></div>`;
+      `<div class="pop-sub">${esc(cat.label)}${isMax ? " · Mastered" : ""}</div></div></div>`;
 
     if (!unlocked) {
       const parent = cat.nodes.find((n) => n.id === node.parent);
