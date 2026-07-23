@@ -794,10 +794,18 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .skill-lock { fill: var(--text-faint); pointer-events: none; }
 
-/* mastered → plain colour with a soft glow (no border, no star) */
+/* per-skill progress bar under the name (fills toward Mastered) */
+.skill-bar__track { fill: var(--tt-node-border); opacity: 0.55; }
+.skill-bar__fill  { fill: var(--fam); }
+.tt-wedge:not(.is-current) .skill-bar { display: none; }
+
+/* mastered → golden fill + golden (slightly darker) emoji, with a soft glow */
 .skill-node.is-mastered .skill-dot {
-  fill: var(--fam);
-  filter: drop-shadow(0 0 4px #ffdf7a) drop-shadow(0 0 10px rgba(255,193,36,0.9));
+  fill: #f4c430;
+  filter: drop-shadow(0 0 5px #ffe27c) drop-shadow(0 0 12px rgba(246,196,54,0.95));
+}
+.skill-node.is-mastered .skill-dot__icon {
+  filter: grayscale(1) sepia(1) saturate(6) hue-rotate(-16deg) brightness(0.82);
 }
 
 /* locked stays the same — neutral circle, dashed edge, padlock */
