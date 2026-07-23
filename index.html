@@ -278,7 +278,16 @@
 
   <div class="tree-stage" id="tree-stage">
     <svg id="tree-svg" xmlns="http://www.w3.org/2000/svg"></svg>
-    <div class="tree-hint">Drag to pan · scroll to zoom · ‹ › or swipe to switch branch</div>
+    <div class="tree-hint">Tap a skill to log reps · drag to pan · scroll to zoom · ‹ › or swipe to switch branch</div>
+  </div>
+
+  <!-- per-skill popup -->
+  <div class="skill-pop" id="skill-pop" hidden>
+    <div class="skill-pop__backdrop" data-pop-close></div>
+    <div class="skill-pop__card" role="dialog" aria-modal="true" aria-label="Skill detail">
+      <button class="skill-pop__close" data-pop-close aria-label="Close">✕</button>
+      <div class="skill-pop__body" id="skill-pop-body"></div>
+    </div>
   </div>
 
   <div class="tree-footer">

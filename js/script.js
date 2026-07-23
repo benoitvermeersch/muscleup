@@ -269,9 +269,39 @@ const CIRCLE_R = 27;  // skill node radius
 const LABEL_H  = 32;  // space under each circle for the name
 const FO_W     = 116; // node footprint width (for bounding box)
 const BASE_R = 340;   // radius of the first ring (depth 1)
-const RING   = 240;   // distance between rings — wider spacing eases the fixed-72° crowding
-const CENTER_ANGLE = -Math.PI / 2;       // wedge points straight up
-const WEDGE_SPAN = (2 * Math.PI) / 5;    // every branch is exactly 360° / 5 = 72°
+const RING   = 240;   // distance between rings
+const CENTER_ANGLE = -Math.PI / 2;         // wedge points straight up
+const WEDGE_SPAN = (110 * Math.PI) / 180;  // every branch is exactly 110° wide
+const ROT_STEP   = 122;                     // deg between adjacent wedges in the carousel
+
+// progression: every 200 reps is a new rank; reaching Novice (200) unlocks the next skill
+const RANKS = ["Beginner", "Novice", "Intermediate", "Advanced", "Mastered"];
+const REPS_PER_RANK = 200;
+const UNLOCK_REPS = 200;
+
+// clean inline padlock (no emoji)
+const LOCK_SVG =
+  '<svg class="lock-ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">' +
+  '<path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v3H6.5A2.5 2.5 0 0 0 4 12.5v6A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-6A2.5 2.5 0 0 0 17.5 10H17V7a5 5 0 0 0-5-5zm3 8H9V7a3 3 0 0 1 6 0v3zm-3 3.25a1.75 1.75 0 0 1 .75 3.33V19a.75.75 0 0 1-1.5 0v-2.42A1.75 1.75 0 0 1 12 13.25z"/>' +
+  '</svg>';
+
+/* ---------------------------------------------------------------------
+   Progression state (persisted per skill)
+   --------------------------------------------------------------------- */
+let repsState = {};
+try { repsState = JSON.parse(localStorage.getItem("mu-reps") || "{}") || {}; } catch (e) { repsState = {}; }
+
+function repsOf(catKey, id) { return repsState[`${catKey}:${id}`] || 0; }
+function addRepsTo(catKey, id, n) {
+  const k = `${catKey}:${id}`;
+  repsState[k] = Math.max(0, (repsState[k] || 0) + n);
+  localStorage.setItem("mu-reps", JSON.stringify(repsState));
+}
+function rankIndex(reps) { return Math.min(RANKS.length - 1, Math.floor(reps / REPS_PER_RANK)); }
+function isUnlocked(cat, node) {
+  if (node.parent === "START") return true;            // roots (closest to START) always open
+  return repsOf(cat.key, node.parent) >= UNLOCK_REPS;  // parent must reach Novice
+}
 
 function layoutCategory(cat) {
   const nodes = cat.nodes;
@@ -395,9 +425,6 @@ function renderCategorySVG(cat) {
   });
   svg += edges;
 
-  // --- START vertex ---
-  svg += `<g class="tt-start"><circle cx="0" cy="0" r="31"/><text x="0" y="4">START</text></g>`;
-
   // --- AND / OR chips ---
   cat.nodes.forEach((n) => {
     if (!n.connector) return;
@@ -415,20 +442,21 @@ function renderCategorySVG(cat) {
   cat.nodes.forEach((n) => {
     const c = pos.get(n.id);
     const f = fam(n);
+    const unlocked = isUnlocked(cat, n);
+    const reps = repsOf(cat.key, n.id);
+    const mastered = unlocked && rankIndex(reps) >= RANKS.length - 1;
     const cls = ["skill-circle"];
     if (n.legendary) cls.push("is-legendary");
-    if (n.locked) cls.push("is-locked");
-    const lock = n.locked
-      ? `<span class="skill-circle__lock" title="${esc(n.lockReason || "Locked")}">🔒</span>`
-      : "";
+    if (!unlocked) cls.push("is-locked");
+    if (mastered) cls.push("is-mastered");
+    const inner = unlocked
+      ? `<span class="skill-circle__icon">${f.icon || "•"}</span>`
+      : LOCK_SVG;
     svg += `<foreignObject class="node-fo" x="${(c.x - foW / 2).toFixed(1)}" y="${(c.y - CIRCLE_R).toFixed(1)}" width="${foW}" height="${foH}">` +
-      `<div xmlns="http://www.w3.org/1999/xhtml" class="skill-circle-wrap">` +
-      `<div class="${cls.join(" ")}" style="--fam:${f.color}"${n.locked ? ` title="${esc(n.lockReason || "")}"` : ""}>` +
-      `<span class="skill-circle__icon">${f.icon || "•"}</span>${lock}</div>` +
+      `<div xmlns="http://www.w3.org/1999/xhtml" class="skill-circle-wrap" data-node="${cat.key}:${n.id}" role="button" tabindex="0">` +
+      `<div class="${cls.join(" ")}" style="--fam:${f.color}">${inner}</div>` +
       `<span class="skill-circle__label">${esc(n.label)}</span></div></foreignObject>`;
   });
-
-  const defs = `<defs><marker id="tt-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--tt-line)"/></marker></defs>`;
 
   // content bounding box
   const xs = [], ys = [];
@@ -444,7 +472,7 @@ function renderCategorySVG(cat) {
   const minY = Math.min(...ys) - P, maxY = Math.max(...ys) + P;
 
   return {
-    markup: defs + svg,
+    markup: svg,
     box: { x: minX, y: minY, w: maxX - minX, h: maxY - minY },
   };
 }
@@ -462,41 +490,72 @@ function initSkillTree() {
   const iconEl   = document.getElementById("tree-cat-icon");
   const checkEl  = document.getElementById("tree-cat-check");
   const metaEl   = document.getElementById("tree-cat-meta");
+  const popEl    = document.getElementById("skill-pop");
+  const popBody  = document.getElementById("skill-pop-body");
   if (!overlay || !svg) return;
 
-  let index = 0;
-  let box = { x: 0, y: 0, w: 100, h: 100 };   // full content box (for reset)
-  let vb  = { x: 0, y: 0, w: 100, h: 100 };    // current viewBox
+  const N = CATEGORIES.length;
+  let pos = 0, targetPos = 0, animating = false, animRAF = 0;
+  let wedgeEls = [];
+  const boxes = [];
+  let box = { x: 0, y: 0, w: 1000, h: 1000 };
+  let vb  = { x: 0, y: 0, w: 100, h: 100 };
 
   svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  const applyViewBox = () => svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+  const targetIndex = () => ((Math.round(targetPos) % N) + N) % N;
 
-  function applyViewBox() {
-    svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
-  }
-
-  // full-content fit (used as the zoom-out limit reference)
-  function fit() {
-    vb = { x: box.x, y: box.y, w: box.w, h: box.h };
-    applyViewBox();
-  }
-
-  // default landing view: zoomed in on START + the first rings (not everything visible)
+  // default landing view: zoomed in on START + the first rings
   function home() {
     const sw = stage.clientWidth || 1200;
     const sh = stage.clientHeight || 700;
-    const viewH = BASE_R + RING * 2.6;          // ~START plus the first few rings
+    const viewH = BASE_R + RING * 2.4;
     const viewW = viewH * (sw / sh);
     vb = { x: -viewW / 2, y: 110 - viewH, w: viewW, h: viewH };
     applyViewBox();
   }
 
+  /* ---- build the full 5-wedge wheel once ---- */
+  function build() {
+    let inner = `<defs><marker id="tt-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--tt-line)"/></marker></defs>`;
+    inner += `<g id="tt-wheel">`;
+    CATEGORIES.forEach((cat, i) => {
+      const { markup, box: b } = renderCategorySVG(cat);
+      boxes[i] = b;
+      inner += `<g class="tt-wedge" data-wi="${i}">${markup}</g>`;
+    });
+    inner += `</g>`;
+    inner += `<g class="tt-start"><circle cx="0" cy="0" r="31"/><text x="0" y="4">START</text></g>`;
+    svg.innerHTML = inner;
+    wedgeEls = Array.from(svg.querySelectorAll(".tt-wedge"));
+    layoutWheel();
+  }
+
+  /* ---- position every wedge around the START vertex per `pos` ---- */
+  function layoutWheel() {
+    wedgeEls.forEach((el) => {
+      const i = +el.dataset.wi;
+      const iu = i + N * Math.round((pos - i) / N);   // nearest unrolled slot
+      const theta = (iu - pos) * ROT_STEP;            // degrees around origin
+      el.setAttribute("transform", `rotate(${theta.toFixed(2)})`);
+      const a = Math.abs(theta);
+      let op = a < 1 ? 1 : Math.max(0.14, 1 - a / (ROT_STEP * 1.12));
+      if (a > ROT_STEP * 1.6) op = 0;
+      el.style.opacity = op.toFixed(3);
+      const isCenter = a < ROT_STEP * 0.5;
+      el.style.pointerEvents = isCenter && !animating ? "auto" : "none";
+      el.classList.toggle("is-current", isCenter);
+    });
+  }
+
+  /* ---- chrome (title / dots / legend / colour) for the centred branch ---- */
   function buildDots() {
     dotsEl.innerHTML = "";
     CATEGORIES.forEach((cat, i) => {
       const b = document.createElement("button");
-      b.className = "tree-dots__dot" + (i === index ? " is-active" : "");
+      b.className = "tree-dots__dot";
       b.setAttribute("aria-label", cat.label);
-      b.addEventListener("click", () => go(i));
+      b.addEventListener("click", () => goTo(i));
       dotsEl.appendChild(b);
     });
   }
@@ -510,35 +569,50 @@ function initSkillTree() {
     }).join("");
     html += `<span class="tree-legend__sep"></span>`;
     html += `<span class="tree-legend__item"><span class="tree-legend__sw tree-legend__sw--legendary"></span>Legendary</span>`;
-    if (cat.nodes.some((n) => n.locked))
-      html += `<span class="tree-legend__item">🔒 Needs another branch</span>`;
-    if (cat.nodes.some((n) => n.connector))
-      html += `<span class="tree-legend__item">AND / OR prerequisite</span>`;
+    html += `<span class="tree-legend__item"><span class="tree-legend__lock">${LOCK_SVG}</span>Locked — train the previous skill</span>`;
     legendEl.innerHTML = html;
   }
 
-  function render() {
-    const cat = CATEGORIES[index];
+  function updateChrome() {
+    const i = targetIndex();
+    const cat = CATEGORIES[i];
     overlay.style.setProperty("--cat-color", cat.color);
-
     nameEl.textContent = cat.label;
     iconEl.textContent = cat.icon;
     checkEl.classList.toggle("is-on", !!cat.complete);
-    metaEl.textContent = `Branch ${index + 1} / ${CATEGORIES.length}` + (cat.complete ? " · complete" : "");
-
-    const { markup, box: b } = renderCategorySVG(cat);
-    svg.innerHTML = markup;
-    box = b;
-    home();
-
+    metaEl.textContent = `Branch ${i + 1} / ${N}` + (cat.complete ? " · complete" : "");
     buildLegend(cat);
-    dotsEl.querySelectorAll(".tree-dots__dot").forEach((d, i) =>
-      d.classList.toggle("is-active", i === index));
+    box = boxes[i] || box;
+    Array.from(dotsEl.children).forEach((d, di) => d.classList.toggle("is-active", di === i));
   }
 
-  function go(i) {
-    index = (i + CATEGORIES.length) % CATEGORIES.length;
-    render();
+  /* ---- animated navigation ---- */
+  function animatePos() {
+    if (animRAF) cancelAnimationFrame(animRAF);
+    animating = true;
+    const start = pos, end = targetPos, t0 = performance.now(), dur = 460;
+    (function frame(t) {
+      const k = Math.min(1, (t - t0) / dur);
+      const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; // easeInOutQuad
+      pos = start + (end - start) * e;
+      layoutWheel();
+      if (k < 1) { animRAF = requestAnimationFrame(frame); }
+      else { pos = end; animating = false; layoutWheel(); }
+    })(t0);
+  }
+  function navigate(dir) {
+    targetPos = Math.round(targetPos) + dir;
+    updateChrome();
+    animatePos();
+  }
+  function goTo(i) {
+    const cur = ((Math.round(targetPos) % N) + N) % N;
+    let d = i - cur;
+    if (d > N / 2) d -= N;
+    if (d < -N / 2) d += N;
+    targetPos = Math.round(targetPos) + d;
+    updateChrome();
+    animatePos();
   }
 
   /* ---- open / close ---- */
@@ -546,21 +620,90 @@ function initSkillTree() {
     overlay.classList.add("is-open");
     overlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("is-locked");
-    requestAnimationFrame(() => { render(); });
+    requestAnimationFrame(() => { build(); updateChrome(); home(); });
   }
-  function close() {
-    overlay.classList.remove("is-open");
-    overlay.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("is-locked");
-  }
+  function close() { closePopup(); overlay.classList.remove("is-open"); overlay.setAttribute("aria-hidden", "true"); document.body.classList.remove("is-locked"); }
 
   document.querySelectorAll("[data-open-tree]").forEach((el) =>
     el.addEventListener("click", (e) => { e.preventDefault(); open(); }));
   document.getElementById("tree-close").addEventListener("click", close);
-  document.getElementById("tree-prev").addEventListener("click", () => go(index - 1));
-  document.getElementById("tree-next").addEventListener("click", () => go(index + 1));
-
+  document.getElementById("tree-prev").addEventListener("click", () => navigate(-1));
+  document.getElementById("tree-next").addEventListener("click", () => navigate(1));
   buildDots();
+
+  /* ---- skill popup ---- */
+  function nodeByKey(key) {
+    const [catKey, id] = key.split(":");
+    const cat = CATEGORIES.find((c) => c.key === catKey);
+    const node = cat && cat.nodes.find((n) => n.id === id);
+    return { cat, node };
+  }
+  function openPopup(key) {
+    const { cat, node } = nodeByKey(key);
+    if (!cat || !node) return;
+    const f = fam(node);
+    const unlocked = isUnlocked(cat, node);
+    const reps = repsOf(cat.key, node.id);
+    const ri = rankIndex(reps);
+    const into = reps % REPS_PER_RANK;
+    const isMax = ri >= RANKS.length - 1;
+
+    let html = `<div class="pop-head">` +
+      `<div class="pop-badge ${unlocked ? "" : "is-locked"} ${node.legendary ? "is-legendary" : ""}" style="--fam:${f.color}">${unlocked ? (f.icon || "•") : LOCK_SVG}</div>` +
+      `<div><h3 class="pop-name">${esc(node.label)}</h3>` +
+      `<div class="pop-sub">${esc(f.name)}${node.legendary ? " · Legendary" : ""}</div></div></div>`;
+
+    if (!unlocked) {
+      const parent = cat.nodes.find((n) => n.id === node.parent);
+      const pReps = parent ? repsOf(cat.key, parent.id) : 0;
+      html += `<div class="pop-locked">` +
+        `<div class="pop-lock-ico">${LOCK_SVG}</div>` +
+        `<p>Locked. Reach <b>Novice</b> (${UNLOCK_REPS} reps) on <b>${esc(parent ? parent.label : "the previous skill")}</b> to unlock this skill.</p>` +
+        (parent ? `<div class="pop-bar"><i style="width:${Math.min(100, (pReps / UNLOCK_REPS) * 100).toFixed(1)}%"></i></div>` +
+          `<div class="pop-bar__meta">${esc(parent.label)}: ${pReps} / ${UNLOCK_REPS} reps</div>` : "") +
+        `</div>`;
+    } else {
+      html += `<div class="pop-rank"><span class="rank-chip rank-${ri}">${RANKS[ri]}</span>` +
+        `<span class="pop-reps"><b>${reps}</b> total reps</span></div>`;
+      html += `<div class="pop-bar"><i style="width:${isMax ? 100 : ((into / REPS_PER_RANK) * 100).toFixed(1)}%"></i></div>`;
+      html += `<div class="pop-bar__meta">` +
+        (isMax ? `Mastered — every skill in this line is open to you.`
+               : `${into} / ${REPS_PER_RANK} reps to <b>${RANKS[ri + 1]}</b>`) + `</div>`;
+      html += `<div class="pop-add">` +
+        `<input id="pop-add-input" type="number" min="1" step="1" value="10" inputmode="numeric" aria-label="Reps to add">` +
+        `<button id="pop-add-btn" class="btn btn--primary">Add reps</button></div>`;
+      html += `<div class="pop-quick">` +
+        [5, 10, 25, 50].map((q) => `<button class="pop-quick__b" data-q="${q}">+${q}</button>`).join("") + `</div>`;
+      html += `<p class="pop-note">Every ${REPS_PER_RANK} reps earns the next rank. Hit Novice to unlock the skill above this one.</p>`;
+    }
+
+    popBody.innerHTML = html;
+    popEl.dataset.key = key;
+    popEl.hidden = false;
+    requestAnimationFrame(() => popEl.classList.add("is-open"));
+
+    const doAdd = (n) => {
+      if (!n || n <= 0) return;
+      addRepsTo(cat.key, node.id, n);
+      build(); layoutWheel();        // reflect new unlocks / ranks
+      openPopup(key);                // refresh popup contents
+    };
+    const addBtn = document.getElementById("pop-add-btn");
+    if (addBtn) {
+      addBtn.addEventListener("click", () => doAdd(parseInt(document.getElementById("pop-add-input").value, 10)));
+      document.getElementById("pop-add-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doAdd(parseInt(e.target.value, 10));
+      });
+      popBody.querySelectorAll(".pop-quick__b").forEach((b) =>
+        b.addEventListener("click", () => doAdd(parseInt(b.dataset.q, 10))));
+    }
+  }
+  function closePopup() {
+    popEl.classList.remove("is-open");
+    popEl.hidden = true;
+    delete popEl.dataset.key;
+  }
+  popEl.querySelectorAll("[data-pop-close]").forEach((el) => el.addEventListener("click", closePopup));
 
   /* ---- zoom helpers ---- */
   function clientToUser(clientX, clientY) {
@@ -572,18 +715,15 @@ function initSkillTree() {
     return { x: p.x, y: p.y };
   }
   function zoomAround(ux, uy, factor) {
-    const minW = box.w * 0.18, maxW = box.w * 3.2;
-    let w = vb.w * factor;
-    w = Math.min(Math.max(w, minW), maxW);
+    const minW = box.w * 0.16, maxW = box.w * 3.2;
+    let w = Math.min(Math.max(vb.w * factor, minW), maxW);
     const f = w / vb.w;
     vb.x = ux - (ux - vb.x) * f;
     vb.y = uy - (uy - vb.y) * f;
     vb.w *= f; vb.h *= f;
     applyViewBox();
   }
-  function zoomCenter(factor) {
-    zoomAround(vb.x + vb.w / 2, vb.y + vb.h / 2, factor);
-  }
+  const zoomCenter = (factor) => zoomAround(vb.x + vb.w / 2, vb.y + vb.h / 2, factor);
 
   document.getElementById("tree-zoom-in").addEventListener("click", () => zoomCenter(0.8));
   document.getElementById("tree-zoom-out").addEventListener("click", () => zoomCenter(1.25));
@@ -595,24 +735,19 @@ function initSkillTree() {
     zoomAround(u.x, u.y, e.deltaY > 0 ? 1.12 : 0.89);
   }, { passive: false });
 
-  /* ---- pan + swipe ---- */
-  let dragging = false, lastX = 0, lastY = 0;
-  let startX = 0, startY = 0, startT = 0, moved = 0;
+  /* ---- pan / swipe / tap ---- */
+  let dragging = false, lastX = 0, lastY = 0, startX = 0, startY = 0, startT = 0, moved = 0;
 
   stage.addEventListener("pointerdown", (e) => {
     dragging = true;
     stage.classList.add("is-panning");
-    stage.setPointerCapture(e.pointerId);
-    lastX = startX = e.clientX;
-    lastY = startY = e.clientY;
-    startT = performance.now();
-    moved = 0;
+    try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+    lastX = startX = e.clientX; lastY = startY = e.clientY;
+    startT = performance.now(); moved = 0;
   });
-
   stage.addEventListener("pointermove", (e) => {
     if (!dragging) return;
-    const dxPix = e.clientX - lastX;
-    const dyPix = e.clientY - lastY;
+    const dxPix = e.clientX - lastX, dyPix = e.clientY - lastY;
     lastX = e.clientX; lastY = e.clientY;
     moved += Math.abs(dxPix) + Math.abs(dyPix);
     const ctm = svg.getScreenCTM();
@@ -623,17 +758,20 @@ function initSkillTree() {
       applyViewBox();
     }
   });
-
   function endDrag(e) {
     if (!dragging) return;
     dragging = false;
     stage.classList.remove("is-panning");
     const dt = performance.now() - startT;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    // fast, mostly-horizontal flick => switch branch
+    const dx = e.clientX - startX, dy = e.clientY - startY;
     if (dt < 450 && Math.abs(dx) > 90 && Math.abs(dx) > Math.abs(dy) * 1.6) {
-      go(dx > 0 ? index - 1 : index + 1);
+      navigate(dx > 0 ? -1 : 1);
+      return;
+    }
+    if (moved < 8 && dt < 350) {
+      const el = document.elementFromPoint(startX, startY);
+      const nodeEl = el && el.closest ? el.closest("[data-node]") : null;
+      if (nodeEl) openPopup(nodeEl.getAttribute("data-node"));
     }
   }
   stage.addEventListener("pointerup", endDrag);
@@ -642,9 +780,9 @@ function initSkillTree() {
   /* ---- keyboard ---- */
   document.addEventListener("keydown", (e) => {
     if (!overlay.classList.contains("is-open")) return;
-    if (e.key === "Escape") close();
-    else if (e.key === "ArrowLeft") go(index - 1);
-    else if (e.key === "ArrowRight") go(index + 1);
+    if (e.key === "Escape") { if (!popEl.hidden) closePopup(); else close(); }
+    else if (e.key === "ArrowLeft") navigate(-1);
+    else if (e.key === "ArrowRight") navigate(1);
     else if (e.key === "+" || e.key === "=") zoomCenter(0.8);
     else if (e.key === "-" || e.key === "_") zoomCenter(1.25);
   });

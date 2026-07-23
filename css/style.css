@@ -803,24 +803,36 @@ ul { margin: 0; padding: 0; list-style: none; }
   line-height: 1;
   filter: saturate(1.05);
 }
-.skill-circle__lock {
-  position: absolute;
-  right: -6px;
-  top: -6px;
-  font-size: 13px;
-  background: var(--tt-panel);
-  border-radius: 50%;
-  line-height: 1;
-  padding: 1px;
-}
+.skill-circle .lock-ico { color: var(--text-faint); display: block; }
 .skill-circle.is-locked {
-  opacity: 0.72;
+  background: var(--tt-node);
+  border-color: var(--tt-node-border);
   border-style: dashed;
+  box-shadow: none;
+  filter: saturate(0.4);
 }
+.skill-circle.is-locked + .skill-circle__label,
+.skill-circle-wrap:has(.is-locked) .skill-circle__label { color: var(--text-faint); }
 .skill-circle.is-legendary {
   background: radial-gradient(circle at 35% 30%, #ffe9a3, #f6c445 55%, #e0a92c);
   border-color: #b9891f;
   box-shadow: 0 0 0 2px rgba(201,166,58,0.4), 0 3px 14px rgba(224,169,44,0.45);
+}
+.skill-circle.is-locked.is-legendary {
+  background: var(--tt-node);
+  border-color: var(--tt-node-border);
+  box-shadow: none;
+}
+.skill-circle.is-mastered {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fam) 55%, transparent), 0 2px 10px rgba(0,0,0,0.25);
+}
+.skill-circle.is-mastered::after {
+  content: "★";
+  position: absolute;
+  right: -5px; bottom: -5px;
+  font-size: 12px;
+  color: #f6c445;
+  text-shadow: 0 0 2px rgba(0,0,0,0.4);
 }
 .skill-circle__label {
   margin-top: 6px;
@@ -936,6 +948,158 @@ ul { margin: 0; padding: 0; list-style: none; }
 .tt-edge--extra { stroke-dasharray: 4 4; opacity: 0.85; }
 .tt-sector { fill: var(--tt-sector); stroke: var(--tt-sector-line); stroke-width: 1.5; }
 .tt-sector-tick { stroke: var(--tt-sector-line); stroke-width: 1.5; stroke-dasharray: 3 5; }
+
+/* carousel wedges rotate around the START vertex */
+.tt-wedge { will-change: transform, opacity; }
+.tt-wedge:not(.is-current) { filter: saturate(0.85); }
+
+/* clean lock glyph in the legend */
+.tree-legend__lock {
+  display: inline-flex;
+  color: var(--text-faint);
+}
+.tree-legend__lock .lock-ico { width: 14px; height: 14px; }
+
+/* =================================================
+   Skill popup (reps + rank + progression)
+   ================================================= */
+.skill-pop {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.skill-pop[hidden] { display: none; }
+.skill-pop__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6,9,14,0.55);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.skill-pop.is-open .skill-pop__backdrop { opacity: 1; }
+.skill-pop__card {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px 24px 24px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  transform: translateY(12px) scale(0.97);
+  opacity: 0;
+  transition: transform 0.22s cubic-bezier(.2,.9,.3,1.2), opacity 0.2s ease;
+}
+.skill-pop.is-open .skill-pop__card { transform: translateY(0) scale(1); opacity: 1; }
+.skill-pop__close {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.skill-pop__close:hover { border-color: var(--lime-dim); }
+
+.pop-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; padding-right: 24px; }
+.pop-badge {
+  --fam: #888;
+  flex: none;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  background: var(--surface-2);
+  border: 2.5px solid var(--fam);
+}
+.pop-badge.is-locked { border-style: dashed; color: var(--text-faint); filter: saturate(0.4); }
+.pop-badge.is-legendary {
+  background: radial-gradient(circle at 35% 30%, #ffe9a3, #f6c445 55%, #e0a92c);
+  border-color: #b9891f;
+}
+.pop-badge .lock-ico { width: 24px; height: 24px; color: var(--text-faint); }
+.pop-name { font-size: 1.15rem; line-height: 1.2; }
+.pop-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 3px; }
+
+.pop-rank { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.rank-chip {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: #08110a;
+}
+.rank-0 { background: #9aa5b4; color: #10141b; }
+.rank-1 { background: #4eb0ff; color: #05121f; }
+.rank-2 { background: #9dff5c; color: #08110a; }
+.rank-3 { background: #c084ff; color: #14071f; }
+.rank-4 { background: linear-gradient(135deg, #ffe28a, #e0a92c); color: #3a2a05; }
+.pop-reps { font-size: 0.9rem; color: var(--text-dim); }
+.pop-reps b { color: var(--text); font-family: var(--font-display); font-size: 1.1rem; }
+
+.pop-bar {
+  height: 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.pop-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--lime-dim), var(--lime));
+  transition: width 0.35s ease;
+}
+.pop-bar__meta { font-size: 0.78rem; color: var(--text-dim); margin-top: 7px; }
+
+.pop-add { display: flex; gap: 8px; margin-top: 18px; }
+.pop-add input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
+.pop-add input:focus { outline: none; border-color: var(--lime-dim); }
+.pop-add .btn { padding: 10px 16px; font-size: 0.9rem; }
+
+.pop-quick { display: flex; gap: 8px; margin-top: 10px; }
+.pop-quick__b {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 0;
+  color: var(--text-dim);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.pop-quick__b:hover { border-color: var(--lime-dim); color: var(--text); }
+.pop-note { font-size: 0.74rem; color: var(--text-faint); margin-top: 14px; line-height: 1.4; }
+
+.pop-locked { text-align: center; margin-top: 6px; }
+.pop-lock-ico { color: var(--text-faint); margin: 4px 0 10px; }
+.pop-lock-ico .lock-ico { width: 40px; height: 40px; margin: 0 auto; }
+.pop-locked p { font-size: 0.9rem; color: var(--text-dim); margin-bottom: 14px; }
+.pop-locked b { color: var(--text); }
 
 /* legend + controls footer */
 .tree-footer {
