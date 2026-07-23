@@ -265,15 +265,16 @@ const CATEGORIES = [
 /* ---------------------------------------------------------------------
    Layout engine: radial tidy-tree fanned into an upward "V" wedge
    --------------------------------------------------------------------- */
-const CIRCLE_R = 27;  // skill node radius
-const LABEL_H  = 32;  // space under each circle for the name
-const FO_W     = 116; // node footprint width (for bounding box)
+const CIRCLE_R = 32;  // skill node radius
+const LABEL_H  = 36;  // space under each circle for the name
+const FO_W     = 126; // node footprint width (for bounding box)
 const BASE_R = 340;   // radius of the first ring (depth 1)
 const RING   = 240;   // distance between rings
 const CENTER_ANGLE = -Math.PI / 2;         // wedge points straight up
 const WEDGE_SPAN = (110 * Math.PI) / 180;  // every branch is exactly 110° wide
 const ROT_STEP   = 122;                     // deg between adjacent wedges in the carousel
-const R_START = 150;                        // radius of the START base circle at the wedge vertex
+const R_START   = 210;                      // vertical radius of the START base (used for edge offset + text)
+const R_START_X = 250;                       // horizontal radius — a touch wider than tall
 
 // progression: every 200 reps is a new rank; reaching Novice (200) unlocks the next skill
 const RANKS = ["Beginner", "Novice", "Intermediate", "Advanced", "Mastered"];
@@ -485,7 +486,6 @@ function renderCategorySVG(cat) {
     svg += `<g class="${cls.join(" ")}" data-node="${cat.key}:${n.id}" style="--fam:${cat.color}">` +
       `<circle class="skill-dot" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${CIRCLE_R}"/>` +
       inner +
-      (mastered ? `<text class="skill-dot__star" x="${(c.x + CIRCLE_R - 4).toFixed(1)}" y="${(c.y + CIRCLE_R - 2).toFixed(1)}">★</text>` : "") +
       `<text class="skill-dot__label" x="${c.x.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle">${label}</text>` +
       `</g>`;
   });
@@ -572,8 +572,8 @@ function initSkillTree() {
       inner += `<g class="tt-wedge" data-wi="${i}">${markup}</g>`;
     });
     inner += `</g>`;
-    inner += `<g class="tt-start"><circle cx="0" cy="0" r="${R_START}"/>` +
-      `<text x="0" y="${(-R_START * 0.42).toFixed(0)}">START</text></g>`;
+    inner += `<g class="tt-start"><ellipse cx="0" cy="0" rx="${R_START_X}" ry="${R_START}"/>` +
+      `<text x="0" y="${(-R_START * 0.4).toFixed(0)}">START</text></g>`;
     svg.innerHTML = inner;
     wedgeEls = Array.from(svg.querySelectorAll(".tt-wedge"));
     layoutWheel();
@@ -623,8 +623,7 @@ function initSkillTree() {
     overlay.style.setProperty("--cat-color", cat.color);
     nameEl.textContent = cat.label;
     iconEl.textContent = cat.icon;
-    checkEl.classList.toggle("is-on", !!cat.complete);
-    metaEl.textContent = `Branch ${i + 1} / ${N}` + (cat.complete ? " · complete" : "");
+    metaEl.textContent = `Branch ${i + 1} / ${N}`;
     buildLegend(cat);
     box = boxes[i] || box;
     Array.from(dotsEl.children).forEach((d, di) => d.classList.toggle("is-active", di === i));
@@ -760,7 +759,7 @@ function initSkillTree() {
     return { x: p.x, y: p.y };
   }
   function zoomAround(ux, uy, factor) {
-    const minW = box.w * 0.16, maxW = box.w * 3.2;
+    const minW = box.w * 0.16, maxW = box.w * 1.3;   // limit how far you can zoom out
     let w = Math.min(Math.max(vb.w * factor, minW), maxW);
     const f = w / vb.w;
     vb.x = ux - (ux - vb.x) * f;
