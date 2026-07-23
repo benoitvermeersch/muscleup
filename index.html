@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MuscleUp — Level Up Your Body</title>
+<meta name="description" content="A skill tree to help you unlock calisthenics, isometrics and strengthen your body, with AI guidance along the way.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💪</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-glow bg-glow--push" aria-hidden="true"></div>
+<div class="bg-glow bg-glow--pull" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="#top">
+      <span class="brand__mark">MU</span>
+      <span class="brand__name">Muscle<em>Up</em></span>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="#how-it-works">How it works</a>
+      <a href="#categories">Skill Tree</a>
+      <a href="#ai">AI Coach</a>
+    </nav>
+    <a class="btn btn--small btn--primary" href="#join">Join the Waitlist</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero__grid">
+      <div class="hero__copy">
+        <span class="eyebrow"><span class="eyebrow__dot"></span> Early Access &middot; Coming Soon</span>
+        <h1 class="hero__title">Level Up<br><span class="grad-text">Your Body</span></h1>
+        <p class="hero__desc">A skill tree to help you unlock calisthenics, isometrics and strengthen your body — with AI guidance along the way.</p>
+        <div class="hero__actions">
+          <a href="#join" class="btn btn--primary btn--lg">Start Your Journey</a>
+          <a href="#how-it-works" class="btn btn--ghost btn--lg">See How It Works</a>
+        </div>
+        <div class="hero__stats">
+          <div class="stat"><strong>4</strong><span>Skill Branches</span></div>
+          <div class="stat"><strong>100+</strong><span>Moves to Unlock</span></div>
+          <div class="stat"><strong>AI</strong><span>Guided Progress</span></div>
+        </div>
+      </div>
+
+      <div class="hero__visual" role="img" aria-label="Preview of the MuscleUp skill tree with Push, Pull, Legs and Core branches">
+        <svg viewBox="0 0 480 460" class="tree-preview" xmlns="http://www.w3.org/2000/svg">
+          <!-- connecting paths -->
+          <g class="tree-paths" fill="none" stroke-width="3">
+            <path class="path path--push" d="M240,230 C200,180 160,140 130,90"/>
+            <path class="path path--pull" d="M240,230 C280,180 320,140 350,90"/>
+            <path class="path path--legs" d="M240,230 C200,280 160,330 130,380"/>
+            <path class="path path--core" d="M240,230 C280,280 320,330 350,380"/>
+          </g>
+          <!-- root node -->
+          <g class="node node--root">
+            <circle cx="240" cy="230" r="30"/>
+            <text x="240" y="235">YOU</text>
+          </g>
+          <!-- push branch -->
+          <g class="node node--push">
+            <circle cx="130" cy="90" r="24"/>
+            <text x="130" y="95">💪</text>
+          </g>
+          <circle class="node-dot node-dot--push" cx="85" cy="45" r="9"/>
+          <circle class="node-dot node-dot--push node-dot--locked" cx="60" cy="10" r="7"/>
+          <!-- pull branch -->
+          <g class="node node--pull">
+            <circle cx="350" cy="90" r="24"/>
+            <text x="350" y="95">🧗</text>
+          </g>
+          <circle class="node-dot node-dot--pull" cx="395" cy="45" r="9"/>
+          <circle class="node-dot node-dot--pull node-dot--locked" cx="420" cy="10" r="7"/>
+          <!-- legs branch -->
+          <g class="node node--legs">
+            <circle cx="130" cy="380" r="24"/>
+            <text x="130" y="385">🦵</text>
+          </g>
+          <circle class="node-dot node-dot--legs" cx="85" cy="425" r="9"/>
+          <circle class="node-dot node-dot--legs node-dot--locked" cx="60" cy="455" r="7"/>
+          <!-- core branch -->
+          <g class="node node--core">
+            <circle cx="350" cy="380" r="24"/>
+            <text x="350" y="385">🔥</text>
+          </g>
+          <circle class="node-dot node-dot--core" cx="395" cy="425" r="9"/>
+          <circle class="node-dot node-dot--core node-dot--locked" cx="420" cy="455" r="7"/>
+        </svg>
+        <span class="tag tag--push">Push</span>
+        <span class="tag tag--pull">Pull</span>
+        <span class="tag tag--legs">Legs</span>
+        <span class="tag tag--core">Core</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGOS / TRUST STRIP (mission line) -->
+  <section class="mission">
+    <div class="container">
+      <p>No gym required. No guesswork. Just your bodyweight, a plan, and a tree worth climbing.</p>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works" class="section">
+    <div class="container">
+      <h2 class="section__title">Training, gamified.</h2>
+      <p class="section__lead">Every pull-up, handstand and pistol squat is a node on your tree. Unlock one to unlock the next.</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step__num">01</div>
+          <h3>Pick your branch</h3>
+          <p>Choose from Push, Pull, Legs or Core — or train them all at once as your tree grows.</p>
+        </div>
+        <div class="step">
+          <div class="step__num">02</div>
+          <h3>Unlock skills in order</h3>
+          <p>From your first knee push-up to a full planche, every move builds on the one before it — just like an RPG skill tree.</p>
+        </div>
+        <div class="step">
+          <div class="step__num">03</div>
+          <h3>Train with AI guidance</h3>
+          <p>Get personalized form cues, progressions and regressions so you always know exactly what to work on next.</p>
+        </div>
+        <div class="step">
+          <div class="step__num">04</div>
+          <h3>Level up your body</h3>
+          <p>Track streaks, earn milestones, and watch your tree fill in as your strength becomes visible, node by node.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section id="categories" class="section section--alt">
+    <div class="container">
+      <h2 class="section__title">Four branches. One tree.</h2>
+      <p class="section__lead">Every calisthenics move you'll ever chase falls into one of these four skill branches.</p>
+
+      <div class="cards">
+        <article class="card card--push">
+          <div class="card__icon">💪</div>
+          <h3>Push</h3>
+          <p>Push-ups to planche. Build pressing strength through dips, handstands and straight-arm work.</p>
+          <ul class="card__tags">
+            <li>Push-ups</li><li>Dips</li><li>Handstand</li><li>Planche</li>
+          </ul>
+        </article>
+        <article class="card card--pull">
+          <div class="card__icon">🧗</div>
+          <h3>Pull</h3>
+          <p>Rows to muscle-ups. Develop back and grip strength from your first pull-up to a front lever.</p>
+          <ul class="card__tags">
+            <li>Rows</li><li>Pull-ups</li><li>Front Lever</li><li>Muscle-up</li>
+          </ul>
+        </article>
+        <article class="card card--legs">
+          <div class="card__icon">🦵</div>
+          <h3>Legs</h3>
+          <p>Squats to pistols. Build unilateral leg strength, mobility and explosive power from the ground up.</p>
+          <ul class="card__tags">
+            <li>Squats</li><li>Lunges</li><li>Pistol Squat</li><li>Shrimp Squat</li>
+          </ul>
+        </article>
+        <article class="card card--core">
+          <div class="card__icon">🔥</div>
+          <h3>Core</h3>
+          <p>Plank to dragon flag. Train the isometric core control that holds every other skill together.</p>
+          <ul class="card__tags">
+            <li>Plank</li><li>Hollow Body</li><li>L-Sit</li><li>Dragon Flag</li>
+          </ul>
+        </article>
+      </div>
+
+      <p class="categories__note">The full skill tree — with every node, prerequisite and progression — is coming soon.</p>
+    </div>
+  </section>
+
+  <!-- AI GUIDANCE -->
+  <section id="ai" class="section ai">
+    <div class="container ai__grid">
+      <div class="ai__copy">
+        <span class="eyebrow eyebrow--alt"><span class="eyebrow__dot"></span> AI Coach</span>
+        <h2 class="section__title">Your guide through the tree.</h2>
+        <p>Not sure which node to train next, or why your handstand keeps falling? MuscleUp's AI guidance reads your progress and points you to the right skill, the right regression, and the right cue — so you never train blind.</p>
+        <ul class="ai__list">
+          <li>Personalized skill recommendations based on your current tree</li>
+          <li>Form and technique guidance for every move</li>
+          <li>Smart regressions when a skill isn't ready to unlock yet</li>
+        </ul>
+      </div>
+      <div class="ai__panel">
+        <div class="ai__chat">
+          <div class="ai__bubble ai__bubble--user">How do I get my first pull-up?</div>
+          <div class="ai__bubble ai__bubble--ai">You're 2 nodes away — master negative pull-ups and dead hangs first. Want me to add them to your Pull branch?</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA / WAITLIST -->
+  <section id="join" class="section join">
+    <div class="container join__inner">
+      <h2 class="section__title">The tree is growing.</h2>
+      <p class="section__lead">Be first in line when MuscleUp launches. No spam — just your invite to start climbing.</p>
+      <form class="join__form" id="waitlist-form">
+        <label class="sr-only" for="email">Email address</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+        <button type="submit" class="btn btn--primary">Notify Me</button>
+      </form>
+      <p class="join__note" id="waitlist-note">Join fellow athletes ready to level up their body.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer__inner">
+    <div class="brand">
+      <span class="brand__mark">MU</span>
+      <span class="brand__name">Muscle<em>Up</em></span>
+    </div>
+    <p>&copy; 2026 MuscleUp. Level up your body.</p>
+  </div>
+</footer>
+
+<script src="js/script.js"></script>
+</body>
+</html>
