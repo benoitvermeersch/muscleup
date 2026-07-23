@@ -55,33 +55,33 @@ function initTheme() {
    Skill Tree data
    --------------------------------------------------------------------- */
 
-// Colour per movement family (shared across categories where the key repeats)
+// Colour + simple icon per movement family (shared across categories where the key repeats)
 const FAMILY = {
-  push:        { name: "Push-Ups",        color: "#e8873a" },
-  dip:         { name: "Dips",            color: "#d9a521" },
-  planche:     { name: "Planche",         color: "#d6443c" },
-  ring:        { name: "Rings / Cross",   color: "#20a89f" },
-  ringPlanche: { name: "Ring Planche",    color: "#3d86d6" },
-  ringMaltese: { name: "Ring Maltese",    color: "#8a5cd0" },
-  handstand:   { name: "Handstand",       color: "#3fae6b" },
+  push:        { name: "Push-Ups",        color: "#e8873a", icon: "💪" },
+  dip:         { name: "Dips",            color: "#d9a521", icon: "🔻" },
+  planche:     { name: "Planche",         color: "#d6443c", icon: "🤸" },
+  ring:        { name: "Rings / Cross",   color: "#20a89f", icon: "⭕" },
+  ringPlanche: { name: "Ring Planche",    color: "#3d86d6", icon: "🌀" },
+  ringMaltese: { name: "Ring Maltese",    color: "#8a5cd0", icon: "✳️" },
+  handstand:   { name: "Handstand",       color: "#3fae6b", icon: "🙃" },
 
-  pull:        { name: "Pull-Ups",        color: "#3d86d6" },
-  frontLever:  { name: "Front Lever",     color: "#3fae6b" },
-  victorian:   { name: "Victorian",       color: "#8a5cd0" },
-  backLever:   { name: "Back Lever",      color: "#20a89f" },
-  hefesto:     { name: "Hefesto",         color: "#e8873a" },
+  pull:        { name: "Pull-Ups",        color: "#3d86d6", icon: "🧗" },
+  frontLever:  { name: "Front Lever",     color: "#3fae6b", icon: "🦅" },
+  victorian:   { name: "Victorian",       color: "#8a5cd0", icon: "👑" },
+  backLever:   { name: "Back Lever",      color: "#20a89f", icon: "🔄" },
+  hefesto:     { name: "Hefesto",         color: "#e8873a", icon: "🔥" },
 
-  squat:       { name: "Squat",           color: "#3d86d6" },
-  sissy:       { name: "Sissy Squat",     color: "#20a89f" },
-  shrimp:      { name: "Shrimp Squat",    color: "#3fae6b" },
-  legext:      { name: "Leg Ext / Press", color: "#e8873a" },
-  hamstring:   { name: "Hamstring",       color: "#d6443c" },
+  squat:       { name: "Squat",           color: "#3d86d6", icon: "🦵" },
+  sissy:       { name: "Sissy Squat",     color: "#20a89f", icon: "🦿" },
+  shrimp:      { name: "Shrimp Squat",    color: "#3fae6b", icon: "🦐" },
+  legext:      { name: "Leg Ext / Press", color: "#e8873a", icon: "🏋️" },
+  hamstring:   { name: "Hamstring",       color: "#d6443c", icon: "🌉" },
 
-  sit:         { name: "L-Sit Line",      color: "#2493b0" },
-  dragon:      { name: "Dragon Flag",     color: "#8a5cd0" },
-  reverse:     { name: "Reverse Planche", color: "#d152a3" },
+  sit:         { name: "L-Sit Line",      color: "#2493b0", icon: "🪑" },
+  dragon:      { name: "Dragon Flag",     color: "#8a5cd0", icon: "🐉" },
+  reverse:     { name: "Reverse Planche", color: "#d152a3", icon: "🔃" },
 
-  cardio:      { name: "Cardio",          color: "#20a89f" },
+  cardio:      { name: "Cardio",          color: "#20a89f", icon: "🏃" },
 };
 
 const CATEGORIES = [
@@ -265,11 +265,13 @@ const CATEGORIES = [
 /* ---------------------------------------------------------------------
    Layout engine: radial tidy-tree fanned into an upward "V" wedge
    --------------------------------------------------------------------- */
-const NODE_W = 130;
-const NODE_H = 54;
-const BASE_R = 300;   // radius of the first ring (depth 1) — keeps the inner ring from crowding
-const RING   = 150;   // distance between rings
-const CENTER_ANGLE = -Math.PI / 2; // wedge points straight up
+const CIRCLE_R = 27;  // skill node radius
+const LABEL_H  = 32;  // space under each circle for the name
+const FO_W     = 116; // node footprint width (for bounding box)
+const BASE_R = 340;   // radius of the first ring (depth 1)
+const RING   = 240;   // distance between rings — wider spacing eases the fixed-72° crowding
+const CENTER_ANGLE = -Math.PI / 2;       // wedge points straight up
+const WEDGE_SPAN = (2 * Math.PI) / 5;    // every branch is exactly 360° / 5 = 72°
 
 function layoutCategory(cat) {
   const nodes = cat.nodes;
@@ -308,15 +310,8 @@ function layoutCategory(cat) {
   const maxDepth = Math.max(...nodes.map((n) => depth.get(n.id)));
   const maxR = BASE_R + (maxDepth - 1) * RING;
 
-  // choose an angular span so the most crowded ring keeps a comfortable arc gap
-  const perDepth = {};
-  nodes.forEach((n) => { const d = depth.get(n.id); perDepth[d] = (perDepth[d] || 0) + 1; });
-  let wanted = 0.9;
-  Object.keys(perDepth).forEach((d) => {
-    const r = BASE_R + (Number(d) - 1) * RING;
-    wanted = Math.max(wanted, (perDepth[d] * NODE_W * 1.2) / r);
-  });
-  const span = Math.min(wanted, 2.85); // cap the wedge width
+  // every wedge is exactly one fifth of the circle
+  const span = WEDGE_SPAN;
 
   const pos = new Map();
   pos.set("START", { x: 0, y: 0, angle: CENTER_ANGLE });
@@ -383,17 +378,18 @@ function renderCategorySVG(cat) {
   }
 
   // --- edges (primary tree + AND/OR extras) ---
+  const OFF = CIRCLE_R + 5;
   let edges = "";
   cat.nodes.forEach((n) => {
     const c = pos.get(n.id);
     const parent = pos.get(n.parent) || pos.get("START");
-    const offFrom = n.parent === "START" ? 32 : 30;
-    const l = trimLine(parent, c, offFrom, 30);
+    const offFrom = n.parent === "START" ? 32 : OFF;
+    const l = trimLine(parent, c, offFrom, OFF);
     edges += `<line class="tt-edge" x1="${l.x1.toFixed(1)}" y1="${l.y1.toFixed(1)}" x2="${l.x2.toFixed(1)}" y2="${l.y2.toFixed(1)}" marker-end="url(#tt-arrow)"/>`;
     (n.extra || []).forEach((exId) => {
       const ex = pos.get(exId);
       if (!ex) return;
-      const le = trimLine(ex, c, 30, 30);
+      const le = trimLine(ex, c, OFF, OFF);
       edges += `<line class="tt-edge tt-edge--extra" x1="${le.x1.toFixed(1)}" y1="${le.y1.toFixed(1)}" x2="${le.x2.toFixed(1)}" y2="${le.y2.toFixed(1)}" marker-end="url(#tt-arrow)"/>`;
     });
   });
@@ -408,25 +404,28 @@ function renderCategorySVG(cat) {
     const c = pos.get(n.id);
     const len = Math.hypot(c.x, c.y) || 1;
     const ux = -c.x / len, uy = -c.y / len; // toward origin
-    const cx = c.x + ux * (NODE_H / 2 + 15);
-    const cy = c.y + uy * (NODE_H / 2 + 15);
+    const cx = c.x + ux * (CIRCLE_R + 12);
+    const cy = c.y + uy * (CIRCLE_R + 12);
     svg += `<foreignObject x="${(cx - 19).toFixed(1)}" y="${(cy - 9).toFixed(1)}" width="38" height="18" class="node-fo">` +
            `<div xmlns="http://www.w3.org/1999/xhtml" class="tt-chip">${n.connector}</div></foreignObject>`;
   });
 
-  // --- nodes ---
+  // --- nodes: circle with an exercise icon, name underneath ---
+  const foW = FO_W, foH = CIRCLE_R * 2 + LABEL_H;
   cat.nodes.forEach((n) => {
     const c = pos.get(n.id);
     const f = fam(n);
-    const cls = ["skill-node"];
+    const cls = ["skill-circle"];
     if (n.legendary) cls.push("is-legendary");
     if (n.locked) cls.push("is-locked");
     const lock = n.locked
-      ? `<span class="skill-node__lock" title="${esc(n.lockReason || "Locked")}">🔒</span>`
+      ? `<span class="skill-circle__lock" title="${esc(n.lockReason || "Locked")}">🔒</span>`
       : "";
-    svg += `<foreignObject class="node-fo" x="${(c.x - NODE_W / 2).toFixed(1)}" y="${(c.y - NODE_H / 2).toFixed(1)}" width="${NODE_W}" height="${NODE_H}">` +
-      `<div xmlns="http://www.w3.org/1999/xhtml" class="${cls.join(" ")}" style="--fam:${f.color}"${n.locked ? ` title="${esc(n.lockReason || "")}"` : ""}>` +
-      `${lock}<span class="skill-node__label">${esc(n.label)}</span></div></foreignObject>`;
+    svg += `<foreignObject class="node-fo" x="${(c.x - foW / 2).toFixed(1)}" y="${(c.y - CIRCLE_R).toFixed(1)}" width="${foW}" height="${foH}">` +
+      `<div xmlns="http://www.w3.org/1999/xhtml" class="skill-circle-wrap">` +
+      `<div class="${cls.join(" ")}" style="--fam:${f.color}"${n.locked ? ` title="${esc(n.lockReason || "")}"` : ""}>` +
+      `<span class="skill-circle__icon">${f.icon || "•"}</span>${lock}</div>` +
+      `<span class="skill-circle__label">${esc(n.label)}</span></div></foreignObject>`;
   });
 
   const defs = `<defs><marker id="tt-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--tt-line)"/></marker></defs>`;
@@ -435,8 +434,8 @@ function renderCategorySVG(cat) {
   const xs = [], ys = [];
   cat.nodes.forEach((n) => {
     const c = pos.get(n.id);
-    xs.push(c.x - NODE_W / 2, c.x + NODE_W / 2);
-    ys.push(c.y - NODE_H / 2, c.y + NODE_H / 2);
+    xs.push(c.x - foW / 2, c.x + foW / 2);
+    ys.push(c.y - CIRCLE_R, c.y + CIRCLE_R + LABEL_H);
   });
   xs.push(-rOuter * Math.abs(Math.cos(a0)) - 40, rOuter * Math.abs(Math.cos(a1)) + 40, 0);
   ys.push(-rOuter - 20, 60);
@@ -475,8 +474,19 @@ function initSkillTree() {
     svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
   }
 
+  // full-content fit (used as the zoom-out limit reference)
   function fit() {
     vb = { x: box.x, y: box.y, w: box.w, h: box.h };
+    applyViewBox();
+  }
+
+  // default landing view: zoomed in on START + the first rings (not everything visible)
+  function home() {
+    const sw = stage.clientWidth || 1200;
+    const sh = stage.clientHeight || 700;
+    const viewH = BASE_R + RING * 2.6;          // ~START plus the first few rings
+    const viewW = viewH * (sw / sh);
+    vb = { x: -viewW / 2, y: 110 - viewH, w: viewW, h: viewH };
     applyViewBox();
   }
 
@@ -519,7 +529,7 @@ function initSkillTree() {
     const { markup, box: b } = renderCategorySVG(cat);
     svg.innerHTML = markup;
     box = b;
-    fit();
+    home();
 
     buildLegend(cat);
     dotsEl.querySelectorAll(".tree-dots__dot").forEach((d, i) =>
@@ -577,7 +587,7 @@ function initSkillTree() {
 
   document.getElementById("tree-zoom-in").addEventListener("click", () => zoomCenter(0.8));
   document.getElementById("tree-zoom-out").addEventListener("click", () => zoomCenter(1.25));
-  document.getElementById("tree-zoom-reset").addEventListener("click", fit);
+  document.getElementById("tree-zoom-reset").addEventListener("click", home);
 
   stage.addEventListener("wheel", (e) => {
     e.preventDefault();
