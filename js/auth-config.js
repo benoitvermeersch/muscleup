@@ -30,6 +30,6 @@
    --------------------------------------------------------------------- */
 
 window.MU_AUTH_CONFIG = {
-  SUPABASE_URL: "",
-  SUPABASE_ANON_KEY: "",
+  SUPABASE_URL: "https://ixcmhtoixwewbaqtuimb.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_6FBYhjIsyScYEihaTNxr9w_417OyU3I",
 };
