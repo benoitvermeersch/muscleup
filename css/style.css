@@ -313,7 +313,9 @@ ul { margin: 0; padding: 0; list-style: none; }
   stroke: var(--border);
   stroke-width: 2;
 }
-.mini-node__ico { font-size: 22px; text-anchor: middle; }
+/* the inner pip needs to out-specify the ".mini-node circle" rule above */
+.mini-node circle.mini-node__pip { fill: var(--text); stroke: none; }
+
 .mini-node__label {
   font-family: var(--font-display);
   font-size: 15px;
@@ -321,11 +323,16 @@ ul { margin: 0; padding: 0; list-style: none; }
   fill: var(--text-dim);
 }
 
-.mini-node--goal circle {
-  fill: rgba(217, 165, 33, 0.14);
-  stroke: #ffd76b;
-}
+.mini-node--goal circle { fill: rgba(217, 165, 33, 0.14); stroke: #ffd76b; }
+.mini-node--goal circle.mini-node__pip { fill: #ffd76b; stroke: none; }
 .mini-node--goal .mini-node__label { fill: #ffd76b; font-weight: 700; }
+
+/* side branches and the smaller nodes on them */
+.mini-branch path { stroke: var(--border); }
+.mini-branch--faint path { stroke: var(--border); opacity: 0.55; }
+
+.mini-dot { fill: var(--surface-2); stroke: var(--border); stroke-width: 2; }
+.mini-dot--faint { fill: var(--bg-alt); opacity: 0.6; }
 
 /* ---------- mission strip ---------- */
 

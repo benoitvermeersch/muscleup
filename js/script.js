@@ -687,11 +687,19 @@ function initSkillTree() {
     animatePos();
   }
 
+  /* ---- signed-out preview notice ---- */
+  const previewBar = document.getElementById("tree-preview-bar");
+  function syncPreviewBar() {
+    if (!previewBar) return;
+    previewBar.hidden = Boolean(window.MuAuth && window.MuAuth.currentUser());
+  }
+
   /* ---- open / close ---- */
   function open() {
     overlay.classList.add("is-open");
     overlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("is-locked");
+    syncPreviewBar();
     requestAnimationFrame(() => {
       build(); updateChrome(); home(); requestAnimationFrame(layoutWheel);
       if (!hasAssessed()) openAssessment();
@@ -708,6 +716,7 @@ function initSkillTree() {
   if (window.MuAuth) {
     window.MuAuth.onChange(() => {
       loadReps();
+      syncPreviewBar();
       if (overlay.classList.contains("is-open")) { build(); updateChrome(); layoutWheel(); }
     });
   }

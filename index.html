@@ -24,7 +24,7 @@
     </a>
     <nav class="nav__links" aria-label="Primary">
       <a href="#how-it-works">How it works</a>
-      <a href="#" data-open-tree>Skill Tree</a>
+      <a href="#categories">Skill Tree</a>
       <a href="#ai">AI Coach</a>
     </nav>
     <div class="nav__tools">
@@ -71,6 +71,17 @@
           <path class="rise" d="M150 24 L232 132 L188 132 L188 548 L112 548 L112 132 L68 132 Z"
                 fill="url(#rise-fill)" stroke="url(#rise-edge)" stroke-width="1.5" stroke-linejoin="round"/>
 
+          <!-- side branches off the main line -->
+          <g class="mini-branch" fill="none" stroke-width="2" stroke-linecap="round">
+            <path d="M126 430 C 108 424 92 416 80 406"/>
+            <path d="M126 340 C 104 334 84 326 72 316"/>
+            <path d="M127 249 C 112 242 98 234 87 227"/>
+          </g>
+          <g class="mini-branch mini-branch--faint" fill="none" stroke-width="1.5" stroke-linecap="round">
+            <path d="M64 400 C 54 392 46 384 39 377"/>
+            <path d="M57 311 C 47 303 40 295 34 289"/>
+          </g>
+
           <!-- links between consecutive skills -->
           <g class="chain" stroke-width="2" stroke-linecap="round">
             <line x1="150" y1="488" x2="150" y2="464"/>
@@ -79,6 +90,13 @@
             <line x1="150" y1="232" x2="150" y2="194"/>
             <line x1="150" y1="142" x2="150" y2="104"/>
           </g>
+
+          <!-- smaller nodes hanging off the branches -->
+          <circle class="mini-dot" cx="72" cy="400" r="9"/>
+          <circle class="mini-dot" cx="64" cy="310" r="9"/>
+          <circle class="mini-dot" cx="80" cy="222" r="8"/>
+          <circle class="mini-dot mini-dot--faint" cx="32" cy="372" r="6"/>
+          <circle class="mini-dot mini-dot--faint" cx="27" cy="283" r="6"/>
 
           <!-- START -->
           <g class="mini-start">
@@ -89,27 +107,27 @@
           <!-- the five skills, every node the same size -->
           <g class="mini-node">
             <circle cx="150" cy="438" r="26"/>
-            <text class="mini-node__ico" x="150" y="438" dy="0.34em">📐</text>
+            <circle class="mini-node__pip" cx="150" cy="438" r="7"/>
             <text class="mini-node__label" x="196" y="438" dy="0.34em">Incline Push-Up</text>
           </g>
           <g class="mini-node">
             <circle cx="150" cy="348" r="26"/>
-            <text class="mini-node__ico" x="150" y="348" dy="0.34em">💪</text>
+            <circle class="mini-node__pip" cx="150" cy="348" r="7"/>
             <text class="mini-node__label" x="196" y="348" dy="0.34em">Push-Up</text>
           </g>
           <g class="mini-node">
             <circle cx="150" cy="258" r="26"/>
-            <text class="mini-node__ico" x="150" y="258" dy="0.34em">🔻</text>
+            <circle class="mini-node__pip" cx="150" cy="258" r="7"/>
             <text class="mini-node__label" x="196" y="258" dy="0.34em">Dip</text>
           </g>
           <g class="mini-node">
             <circle cx="150" cy="168" r="26"/>
-            <text class="mini-node__ico" x="150" y="168" dy="0.34em">🧗</text>
+            <circle class="mini-node__pip" cx="150" cy="168" r="7"/>
             <text class="mini-node__label" x="196" y="168" dy="0.34em">Pull-Up</text>
           </g>
           <g class="mini-node mini-node--goal">
             <circle cx="150" cy="78" r="26"/>
-            <text class="mini-node__ico" x="150" y="78" dy="0.34em">🏆</text>
+            <circle class="mini-node__pip" cx="150" cy="78" r="8"/>
             <text class="mini-node__label" x="196" y="78" dy="0.34em">Muscle-Up</text>
           </g>
         </svg>
@@ -277,6 +295,12 @@
     <div class="tree-chrome__right">
       <div class="tree-dots" id="tree-dots" aria-hidden="true"></div>
     </div>
+  </div>
+
+  <div class="tree-preview-bar" id="tree-preview-bar" hidden>
+    <span class="tree-preview-bar__tag">Preview</span>
+    <span class="tree-preview-bar__text">You're signed out — progress is saved on this device only, not to an account.</span>
+    <button type="button" class="btn btn--primary btn--small" data-auth-open="signup">Sign up</button>
   </div>
 
   <div class="tree-stage" id="tree-stage">
