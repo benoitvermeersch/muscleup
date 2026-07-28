@@ -351,6 +351,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 /* ---------- generic section ---------- */
 
 .section { padding: 96px 0; }
+.section[hidden] { display: none; }
 .section--alt { background: var(--bg-alt); }
 
 .section__title {

@@ -4,8 +4,23 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   initWaitlist();
+  initJoinSection();
   initSkillTree();
 });
+
+/* ---------------------------------------------------------------------
+   The "create your account" section is only useful to signed-out
+   visitors — once you have an account it's just asking you to sign up
+   for something you already have.
+   --------------------------------------------------------------------- */
+function initJoinSection() {
+  const join = document.getElementById("join");
+  if (!join || !window.MuAuth) return;
+
+  const sync = () => { join.hidden = Boolean(window.MuAuth.currentUser()); };
+  window.MuAuth.onChange(sync);
+  sync();
+}
 
 /* ---------------------------------------------------------------------
    Waitlist form
@@ -711,6 +726,16 @@ function initSkillTree() {
   // "guest" key on this device; signing in swaps to that account's tree.
   document.querySelectorAll("[data-open-tree]").forEach((el) =>
     el.addEventListener("click", (e) => { e.preventDefault(); open(); }));
+
+  // The header "Skill Tree" link goes straight to the map once you have an
+  // account. Signed out it keeps its href and just scrolls down to the
+  // branches section, so the page still works without JS.
+  document.querySelectorAll("[data-tree-link]").forEach((el) =>
+    el.addEventListener("click", (e) => {
+      if (!(window.MuAuth && window.MuAuth.currentUser())) return;
+      e.preventDefault();
+      open();
+    }));
 
   // switching account (in either direction) swaps which tree is on screen
   if (window.MuAuth) {
