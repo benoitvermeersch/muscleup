@@ -17,11 +17,16 @@ Each move is a node you unlock as you progress, Duolingo-style, with AI guidance
 
 Signing up takes an email and a password of **more than 8 characters**. You
 get a confirmation email, and the account can't log in until that link is
-clicked. Once you're in, the skill tree opens with a one-time check-in —
-tick the exercises you can already do and the skills above them unlock.
+clicked.
+
+**The skill tree is open to everyone — an account isn't required.** Opening
+it runs a one-time check-in: tick the exercises you can already do and the
+skills above them unlock.
 
 Progress is stored per account, so two people sharing a browser don't
-inherit each other's tree.
+inherit each other's tree. Signed out, progress is kept on the device under
+a `guest` key; it stays separate from any account you later sign in to,
+rather than being merged into it.
 
 ### Turning on real email
 

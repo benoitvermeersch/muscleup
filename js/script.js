@@ -699,22 +699,16 @@ function initSkillTree() {
   }
   function close() { closePopup(); overlay.classList.remove("is-open"); overlay.setAttribute("aria-hidden", "true"); document.body.classList.remove("is-locked"); }
 
-  // the tree is the signed-in half of the product — no account, no tree
-  function requestTree() {
-    if (!window.MuAuth) return open();
-    if (window.MuAuth.currentUser()) return open();
-    window.MuAuth.openModal("signup", requestTree);
-  }
-
+  // The tree is open to everyone. Signed out, progress is kept under a
+  // "guest" key on this device; signing in swaps to that account's tree.
   document.querySelectorAll("[data-open-tree]").forEach((el) =>
-    el.addEventListener("click", (e) => { e.preventDefault(); requestTree(); }));
+    el.addEventListener("click", (e) => { e.preventDefault(); open(); }));
 
-  // swap accounts → swap trees, and shut the overlay on log out
+  // switching account (in either direction) swaps which tree is on screen
   if (window.MuAuth) {
-    window.MuAuth.onChange((user) => {
+    window.MuAuth.onChange(() => {
       loadReps();
-      if (!user) close();
-      else if (overlay.classList.contains("is-open")) { build(); updateChrome(); layoutWheel(); }
+      if (overlay.classList.contains("is-open")) { build(); updateChrome(); layoutWheel(); }
     });
   }
 
