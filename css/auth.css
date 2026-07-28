@@ -1,0 +1,470 @@
+/* =================================================
+   MuscleUp — auth dialog, account chip, first-run assessment
+   Uses the tokens defined in css/style.css
+   ================================================= */
+
+/* ---------- header account slot ---------- */
+
+#auth-slot { display: flex; align-items: center; gap: 8px; }
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 5px 4px 4px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.account__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--lime), #4ee0a8);
+  color: #0a0d12;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.account__email {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.account__out {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 5px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.account__out:hover { background: var(--surface-2); color: var(--text); }
+
+/* ---------- confirmation banner ---------- */
+
+.auth-banner {
+  position: fixed;
+  left: 50%;
+  top: 88px;
+  transform: translate(-50%, -12px);
+  /* above the page and the tree overlay (200), but below the dialogs
+     (assessment 260, auth 300) so a toast never sits on their headings */
+  z-index: 250;
+  max-width: min(92vw, 520px);
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  text-align: center;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.auth-banner.is-visible { opacity: 1; transform: translate(-50%, 0); }
+.auth-banner.is-ok { border-color: var(--lime-dim); }
+
+/* ---------- modal shell ---------- */
+
+.auth-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.auth-modal[hidden] { display: none; }
+
+.auth-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 6, 10, 0.72);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.auth-modal.is-open .auth-modal__backdrop { opacity: 1; }
+
+.auth-modal__card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 30px 30px 26px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(14px) scale(0.97);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.auth-modal.is-open .auth-modal__card { opacity: 1; transform: translateY(0) scale(1); }
+
+.auth-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.auth-modal__close:hover { border-color: var(--lime-dim); color: var(--text); }
+
+.auth-head { text-align: center; margin-bottom: 20px; }
+.auth-head .brand { justify-content: center; margin-bottom: 12px; }
+.auth-head h2 { font-size: 1.4rem; }
+.auth-head p { font-size: 0.88rem; color: var(--text-dim); margin-top: 6px; }
+
+/* ---------- tabs ---------- */
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  margin-bottom: 20px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+}
+.auth-tabs[hidden] { display: none; }
+
+.auth-tab {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.86rem;
+  padding: 9px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.auth-tab:hover { color: var(--text); }
+.auth-tab.is-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* ---------- form ---------- */
+
+.auth-form[hidden], .auth-panel[hidden] { display: none; }
+
+.auth-field { margin-bottom: 14px; }
+.auth-field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.auth-field input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.auth-field input::placeholder { color: var(--text-faint); }
+.auth-field input:focus {
+  outline: none;
+  border-color: var(--lime-dim);
+  box-shadow: 0 0 0 3px rgba(157, 255, 92, 0.13);
+}
+.auth-field input.is-invalid {
+  border-color: #ff6b5e;
+  box-shadow: 0 0 0 3px rgba(255, 107, 94, 0.13);
+}
+
+.auth-hint {
+  display: block;
+  margin-top: 7px;
+  font-size: 0.76rem;
+  color: var(--text-faint);
+}
+.auth-hint.is-ok { color: var(--lime-dim); }
+
+.auth-error {
+  display: none;
+  margin-bottom: 14px;
+  padding: 10px 13px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 107, 94, 0.4);
+  background: rgba(255, 107, 94, 0.09);
+  color: #ff9c92;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+.auth-error.is-visible { display: block; }
+
+/* the dark-theme salmon washes out on a white card */
+[data-theme="light"] .auth-error {
+  border-color: rgba(198, 40, 30, 0.35);
+  background: rgba(198, 40, 30, 0.06);
+  color: #b3271b;
+}
+
+.auth-form .btn { width: 100%; margin-top: 6px; }
+.auth-form.is-busy { opacity: 0.75; pointer-events: none; }
+
+.auth-swap {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.83rem;
+  color: var(--text-faint);
+}
+.auth-swap button {
+  border: none;
+  background: transparent;
+  color: var(--lime);
+  font-weight: 600;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.auth-swap button:hover { text-decoration: underline; }
+
+/* ---------- "check your email" panel ---------- */
+
+.auth-sent__icon {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 1.5rem;
+  color: var(--lime);
+}
+.auth-sent__title { text-align: center; font-size: 1.25rem; }
+.auth-sent__lead {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.auth-sent__lead b { color: var(--text); }
+
+.auth-sent__demo {
+  margin-top: 18px;
+  padding: 15px;
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
+  background: var(--bg-alt);
+}
+.auth-sent__demo-tag {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+.auth-sent__demo p { font-size: 0.82rem; color: var(--text-dim); line-height: 1.45; }
+.auth-sent__link {
+  display: inline-block;
+  margin-top: 11px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--lime-dim);
+  color: var(--lime);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.auth-sent__link:hover { background: var(--surface); }
+
+.auth-sent__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.auth-sent__actions .btn { flex: 1; }
+
+.auth-sent__note { margin-top: 10px; font-size: 0.78rem; color: var(--text-faint); text-align: center; }
+.auth-sent__note.is-error { color: #ff9c92; }
+[data-theme="light"] .auth-sent__note.is-error { color: #b3271b; }
+
+/* =================================================
+   First-run assessment ("what can you already do?")
+   ================================================= */
+
+.assess {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.assess[hidden] { display: none; }
+
+.assess__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 6, 10, 0.74);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.assess.is-open .assess__backdrop { opacity: 1; }
+
+.assess__card {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  padding: 28px 28px 22px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(14px) scale(0.97);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.assess.is-open .assess__card { opacity: 1; transform: translateY(0) scale(1); }
+
+.assess__eyebrow {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+.assess__title { font-size: 1.35rem; margin-top: 8px; }
+.assess__lead { font-size: 0.88rem; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+
+.assess__list {
+  margin: 18px 0 6px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assess__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.assess__item:hover { border-color: var(--text-faint); }
+.assess__item.is-checked {
+  border-color: var(--lime-dim);
+  background: rgba(157, 255, 92, 0.07);
+}
+
+.assess__item input { position: absolute; opacity: 0; pointer-events: none; }
+
+.assess__box {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a0d12;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.assess__item.is-checked .assess__box {
+  background: var(--lime);
+  border-color: var(--lime);
+}
+.assess__box::after { content: "✓"; opacity: 0; transition: opacity 0.15s ease; }
+.assess__item.is-checked .assess__box::after { opacity: 1; }
+
+.assess__icon { flex: none; font-size: 1.2rem; }
+.assess__text { flex: 1; min-width: 0; }
+.assess__name { display: block; font-family: var(--font-display); font-weight: 600; font-size: 0.94rem; }
+.assess__target { display: block; font-size: 0.78rem; color: var(--text-faint); margin-top: 2px; }
+.assess__branch {
+  flex: none;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--branch, var(--text-dim));
+  border: 1px solid var(--border);
+}
+
+.assess__foot { margin-top: 16px; }
+.assess__count { font-size: 0.8rem; color: var(--text-faint); text-align: center; margin-bottom: 11px; }
+.assess__actions { display: flex; gap: 10px; }
+.assess__actions .btn { flex: 1; }
+
+@media (max-width: 560px) {
+  .auth-modal__card, .assess__card { padding: 24px 20px 20px; }
+  .account__email { display: none; }
+  .assess__branch { display: none; }
+
+  /* The header holds brand + theme toggle + two auth buttons. Tighten
+     everything and drop the toggle's text labels so the row fits a phone
+     instead of being clipped by body{overflow-x:hidden}. */
+  .container { padding: 0 16px; }
+  .nav__tools { gap: 10px; }
+  #auth-slot { gap: 6px; }
+  #auth-slot .btn { padding: 8px 13px; font-size: 0.8rem; }
+
+  .theme-toggle__btn { font-size: 0; padding: 7px 10px; gap: 0; }
+  .theme-toggle__btn .ico { font-size: 0.95rem; }
+}
+
+/* Smallest phones: the MU mark carries the brand on its own */
+@media (max-width: 400px) {
+  .nav .brand__name { display: none; }
+}

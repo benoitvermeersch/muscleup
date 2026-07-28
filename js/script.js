@@ -19,9 +19,22 @@ function initWaitlist() {
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     const email = document.getElementById("email").value.trim();
-    if (!email) return;
-    note.textContent = `You're on the list, ${email}. We'll let you know when the tree opens.`;
-    note.classList.add("is-success");
+    if (!email || !window.MuAuth) return;
+
+    if (window.MuAuth.currentUser()) {
+      note.textContent = "You're already signed in — open the skill tree and keep climbing.";
+      note.classList.add("is-success");
+      return;
+    }
+
+    // hand the address straight to the real signup form
+    window.MuAuth.openModal("signup");
+    const field = document.getElementById("signup-email");
+    if (field) {
+      field.value = email;
+      const password = document.getElementById("signup-password");
+      if (password) password.focus();
+    }
     form.reset();
   });
 }
@@ -281,6 +294,19 @@ const RANKS = ["Beginner", "Novice", "Intermediate", "Advanced", "Mastered"];
 const REPS_PER_RANK = 200;
 const UNLOCK_REPS = 200;
 
+// First-run check-in: the ground-floor skill of each line. Ticking one
+// credits it with UNLOCK_REPS, which opens everything sitting above it.
+const STARTERS = [
+  { cat: "push",   id: "pushup",       icon: "💪", target: "10 clean reps" },
+  { cat: "push",   id: "dip",          icon: "🔻", target: "5 full-depth reps" },
+  { cat: "pull",   id: "pullup",       icon: "🧗", target: "1 dead-hang rep" },
+  { cat: "legs",   id: "squat",        icon: "🦵", target: "20 deep reps" },
+  { cat: "legs",   id: "hambridge",    icon: "🌉", target: "10 controlled reps" },
+  { cat: "core",   id: "plank",        icon: "🔥", target: "a 30-second hold" },
+  { cat: "core",   id: "tucksit",      icon: "🪑", target: "a 15-second hold" },
+  { cat: "cardio", id: "jumpingjacks", icon: "🏃", target: "50 unbroken" },
+];
+
 // clean inline padlock (no emoji)
 const LOCK_SVG =
   '<svg class="lock-ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">' +
@@ -288,16 +314,31 @@ const LOCK_SVG =
   '</svg>';
 
 /* ---------------------------------------------------------------------
-   Progression state (persisted per skill)
+   Progression state (persisted per skill, scoped to the signed-in account)
    --------------------------------------------------------------------- */
+const REPS_BASE = "mu-reps";
 let repsState = {};
-try { repsState = JSON.parse(localStorage.getItem("mu-reps") || "{}") || {}; } catch (e) { repsState = {}; }
+
+function repsKey() {
+  return window.MuAuth ? window.MuAuth.scopedKey(REPS_BASE) : REPS_BASE;
+}
+function loadReps() {
+  try { repsState = JSON.parse(localStorage.getItem(repsKey()) || "{}") || {}; } catch (e) { repsState = {}; }
+}
+function saveReps() {
+  try { localStorage.setItem(repsKey(), JSON.stringify(repsState)); } catch (e) {}
+}
+loadReps();
 
 function repsOf(catKey, id) { return repsState[`${catKey}:${id}`] || 0; }
 function addRepsTo(catKey, id, n) {
   const k = `${catKey}:${id}`;
   repsState[k] = Math.max(0, (repsState[k] || 0) + n);
-  localStorage.setItem("mu-reps", JSON.stringify(repsState));
+  saveReps();
+}
+function setRepsTo(catKey, id, n) {
+  repsState[`${catKey}:${id}`] = Math.max(0, n);
+  saveReps();
 }
 function rankIndex(reps) { return Math.min(RANKS.length - 1, Math.floor(reps / REPS_PER_RANK)); }
 function isUnlocked(cat, node) {
@@ -677,12 +718,116 @@ function initSkillTree() {
     overlay.classList.add("is-open");
     overlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("is-locked");
-    requestAnimationFrame(() => { build(); updateChrome(); home(); requestAnimationFrame(layoutWheel); });
+    requestAnimationFrame(() => {
+      build(); updateChrome(); home(); requestAnimationFrame(layoutWheel);
+      if (!hasAssessed()) openAssessment();
+    });
   }
   function close() { closePopup(); overlay.classList.remove("is-open"); overlay.setAttribute("aria-hidden", "true"); document.body.classList.remove("is-locked"); }
 
+  // the tree is the signed-in half of the product — no account, no tree
+  function requestTree() {
+    if (!window.MuAuth) return open();
+    if (window.MuAuth.currentUser()) return open();
+    window.MuAuth.openModal("signup", requestTree);
+  }
+
   document.querySelectorAll("[data-open-tree]").forEach((el) =>
-    el.addEventListener("click", (e) => { e.preventDefault(); open(); }));
+    el.addEventListener("click", (e) => { e.preventDefault(); requestTree(); }));
+
+  // swap accounts → swap trees, and shut the overlay on log out
+  if (window.MuAuth) {
+    window.MuAuth.onChange((user) => {
+      loadReps();
+      if (!user) close();
+      else if (overlay.classList.contains("is-open")) { build(); updateChrome(); layoutWheel(); }
+    });
+  }
+
+  /* ---- first-run assessment ---- */
+  const assessEl = document.getElementById("assess");
+  const assessList = document.getElementById("assess-list");
+  const assessCount = document.getElementById("assess-count");
+
+  const assessKey = () => (window.MuAuth ? window.MuAuth.scopedKey("mu-assessed") : "mu-assessed");
+  function hasAssessed() {
+    try { return localStorage.getItem(assessKey()) === "1"; } catch (e) { return true; }
+  }
+  function markAssessed() {
+    try { localStorage.setItem(assessKey(), "1"); } catch (e) {}
+  }
+
+  function starterInfo(entry) {
+    const cat = CATEGORIES.find((c) => c.key === entry.cat);
+    const node = cat && cat.nodes.find((n) => n.id === entry.id);
+    return { cat, node };
+  }
+
+  function refreshAssessCount() {
+    const n = assessList.querySelectorAll(".assess__item.is-checked").length;
+    assessCount.textContent = n === 0
+      ? "Nothing ticked — you'll start at the base of every branch."
+      : `${n} skill${n === 1 ? "" : "s"} ticked — that opens the next node on ${n === 1 ? "that line" : "those lines"}.`;
+  }
+
+  function openAssessment() {
+    if (!assessEl) return;
+    if (window.MuAuth && window.MuAuth.hideBanner) window.MuAuth.hideBanner();
+
+    assessList.innerHTML = STARTERS.map((entry) => {
+      const { cat, node } = starterInfo(entry);
+      if (!cat || !node) return "";
+      return `<label class="assess__item" style="--branch:${cat.color}">` +
+        `<input type="checkbox" data-starter="${entry.cat}:${entry.id}">` +
+        `<span class="assess__box" aria-hidden="true"></span>` +
+        `<span class="assess__icon" aria-hidden="true">${entry.icon}</span>` +
+        `<span class="assess__text">` +
+          `<span class="assess__name">${esc(node.label)}</span>` +
+          `<span class="assess__target">${esc(entry.target)}</span>` +
+        `</span>` +
+        `<span class="assess__branch">${esc(cat.label)}</span>` +
+        `</label>`;
+    }).join("");
+
+    assessList.querySelectorAll("input[data-starter]").forEach((input) => {
+      input.addEventListener("change", () => {
+        input.closest(".assess__item").classList.toggle("is-checked", input.checked);
+        refreshAssessCount();
+      });
+    });
+
+    refreshAssessCount();
+    assessEl.hidden = false;
+    requestAnimationFrame(() => assessEl.classList.add("is-open"));
+  }
+
+  function closeAssessment() {
+    assessEl.classList.remove("is-open");
+    setTimeout(() => { assessEl.hidden = true; }, 180);
+  }
+
+  if (assessEl) {
+    document.getElementById("assess-save").addEventListener("click", () => {
+      let unlocked = 0;
+      assessList.querySelectorAll("input[data-starter]:checked").forEach((input) => {
+        const [catKey, id] = input.dataset.starter.split(":");
+        // credit exactly the reps needed to hit Novice, which is the unlock gate
+        if (repsOf(catKey, id) < UNLOCK_REPS) setRepsTo(catKey, id, UNLOCK_REPS);
+        unlocked++;
+      });
+      markAssessed();
+      closeAssessment();
+      build(); updateChrome(); layoutWheel();
+      if (unlocked && window.MuAuth && window.MuAuth.banner) {
+        window.MuAuth.banner(`${unlocked} skill${unlocked === 1 ? "" : "s"} unlocked. Tap any node to log reps.`, "ok");
+      }
+    });
+
+    document.getElementById("assess-skip").addEventListener("click", () => {
+      markAssessed();
+      closeAssessment();
+    });
+  }
   document.getElementById("tree-close").addEventListener("click", close);
   document.getElementById("tree-prev").addEventListener("click", () => navigate(-1));
   document.getElementById("tree-next").addEventListener("click", () => navigate(1));
