@@ -40,8 +40,10 @@
   --tt-sector-line: rgba(255,255,255,0.07);
   --tt-node-text: #eef1f6;
 
-  --font-display: "Space Grotesk", "Inter", sans-serif;
-  --font-body: "Inter", sans-serif;
+  /* Helvetica everywhere. Linux and Windows have no Helvetica, so Arial —
+     metrically identical — picks it up, with Nimbus Sans covering Linux. */
+  --font-display: Helvetica, "Helvetica Neue", "Nimbus Sans", Arial, sans-serif;
+  --font-body: Helvetica, "Helvetica Neue", "Nimbus Sans", Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -218,15 +220,15 @@ ul { margin: 0; padding: 0; list-style: none; }
   gap: 8px;
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--lime);
-  background: rgba(157,255,92,0.08);
-  border: 1px solid rgba(157,255,92,0.25);
+  color: var(--text);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.18);
   padding: 6px 14px;
   border-radius: 999px;
   margin-bottom: 22px;
 }
-.eyebrow--alt { color: var(--pull); background: rgba(78,176,255,0.08); border-color: rgba(78,176,255,0.25); }
-.eyebrow--alt .eyebrow__dot { background: var(--pull); box-shadow: 0 0 0 4px rgba(78,176,255,0.18); }
+.eyebrow--alt { color: var(--text-dim); background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.14); }
+.eyebrow--alt .eyebrow__dot { background: var(--text-dim); box-shadow: 0 0 0 4px rgba(255,255,255,0.10); }
 
 .eyebrow__dot {
   width: 7px; height: 7px;
@@ -283,58 +285,47 @@ ul { margin: 0; padding: 0; list-style: none; }
   justify-content: center;
 }
 
-.tree-preview { width: 100%; max-width: 460px; height: auto; overflow: visible; }
+.tree-preview { width: 100%; max-width: 340px; height: auto; overflow: visible; }
 
-.tree-paths .path { stroke: var(--border); }
-.path--push { stroke: color-mix(in srgb, var(--push) 55%, var(--border)); }
-.path--pull { stroke: color-mix(in srgb, var(--pull) 55%, var(--border)); }
-.path--legs { stroke: color-mix(in srgb, var(--legs) 55%, var(--border)); }
-.path--core { stroke: color-mix(in srgb, var(--core) 55%, var(--border)); }
+/* the gold climb behind the chain */
+.rise { filter: drop-shadow(0 0 26px rgba(217, 165, 33, 0.22)); }
 
-.node circle {
+/* links sit on top of the gold shaft, so they need to read against it */
+.chain line { stroke: rgba(255, 255, 255, 0.28); }
+
+.mini-start ellipse {
   fill: var(--surface-2);
   stroke: var(--border);
   stroke-width: 2;
 }
-.node text {
+.mini-start text {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  fill: var(--text);
   text-anchor: middle;
 }
-.node--root circle {
-  fill: var(--lime);
-  stroke: var(--lime);
+
+/* every skill node is the same size — only the goal is styled differently */
+.mini-node circle {
+  fill: var(--surface-2);
+  stroke: var(--border);
+  stroke-width: 2;
 }
-.node--root text { font-size: 13px; font-weight: 700; fill: #0a0d12; }
-
-.node--push circle { stroke: var(--push); box-shadow: none; }
-.node--pull circle { stroke: var(--pull); }
-.node--legs circle { stroke: var(--legs); }
-.node--core circle { stroke: var(--core); }
-
-.node-dot { fill: var(--surface-2); stroke-width: 2; }
-.node-dot--push { stroke: var(--push); }
-.node-dot--pull { stroke: var(--pull); }
-.node-dot--legs { stroke: var(--legs); }
-.node-dot--core { stroke: var(--core); }
-.node-dot--locked { fill: var(--bg-alt); stroke: var(--border); opacity: 0.6; }
-
-.tag {
-  position: absolute;
+.mini-node__ico { font-size: 22px; text-anchor: middle; }
+.mini-node__label {
   font-family: var(--font-display);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 5px 11px;
-  border-radius: 999px;
-  border: 1px solid;
-  background: var(--bg-alt);
+  font-size: 15px;
+  font-weight: 600;
+  fill: var(--text-dim);
 }
-.tag--push { top: 6%; left: 4%; color: var(--push); border-color: var(--push); }
-.tag--pull { top: 6%; right: 2%; color: var(--pull); border-color: var(--pull); }
-.tag--legs { bottom: 4%; left: 4%; color: var(--legs); border-color: var(--legs); }
-.tag--core { bottom: 4%; right: 2%; color: var(--core); border-color: var(--core); }
+
+.mini-node--goal circle {
+  fill: rgba(217, 165, 33, 0.14);
+  stroke: #ffd76b;
+}
+.mini-node--goal .mini-node__label { fill: #ffd76b; font-weight: 700; }
 
 /* ---------- mission strip ---------- */
 

@@ -7,9 +7,6 @@
 <meta name="description" content="A skill tree to help you unlock calisthenics, isometrics and strengthen your body, with AI guidance along the way.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#0a0d12">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/auth.css">
 </head>
@@ -56,53 +53,66 @@
         </div>
       </div>
 
-      <div class="hero__visual" role="img" aria-label="Preview of the MuscleUp skill tree with Push, Pull, Legs and Core branches">
-        <svg viewBox="0 0 480 460" class="tree-preview" xmlns="http://www.w3.org/2000/svg">
-          <!-- connecting paths -->
-          <g class="tree-paths" fill="none" stroke-width="3">
-            <path class="path path--push" d="M240,230 C200,180 160,140 130,90"/>
-            <path class="path path--pull" d="M240,230 C280,180 320,140 350,90"/>
-            <path class="path path--legs" d="M240,230 C200,280 160,330 130,380"/>
-            <path class="path path--core" d="M240,230 C280,280 320,330 350,380"/>
+      <div class="hero__visual" role="img" aria-label="A skill tree climbing from START through Incline Push-Up, Push-Up, Dip and Pull-Up to Muscle-Up">
+        <svg viewBox="0 0 420 560" class="tree-preview" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="rise-fill" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%"   stop-color="#8a6b12" stop-opacity="0.04"/>
+              <stop offset="55%"  stop-color="#d9a521" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#ffd76b" stop-opacity="0.40"/>
+            </linearGradient>
+            <linearGradient id="rise-edge" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%"   stop-color="#d9a521" stop-opacity="0.10"/>
+              <stop offset="100%" stop-color="#ffd76b" stop-opacity="0.60"/>
+            </linearGradient>
+          </defs>
+
+          <!-- the climb: a gold arrow rising behind the chain, up to Muscle-Up -->
+          <path class="rise" d="M150 24 L232 132 L188 132 L188 548 L112 548 L112 132 L68 132 Z"
+                fill="url(#rise-fill)" stroke="url(#rise-edge)" stroke-width="1.5" stroke-linejoin="round"/>
+
+          <!-- links between consecutive skills -->
+          <g class="chain" stroke-width="2" stroke-linecap="round">
+            <line x1="150" y1="488" x2="150" y2="464"/>
+            <line x1="150" y1="412" x2="150" y2="374"/>
+            <line x1="150" y1="322" x2="150" y2="284"/>
+            <line x1="150" y1="232" x2="150" y2="194"/>
+            <line x1="150" y1="142" x2="150" y2="104"/>
           </g>
-          <!-- root node -->
-          <g class="node node--root">
-            <circle cx="240" cy="230" r="30"/>
-            <text x="240" y="235">YOU</text>
+
+          <!-- START -->
+          <g class="mini-start">
+            <ellipse cx="150" cy="512" rx="62" ry="24"/>
+            <text x="150" y="512" dy="0.34em">START</text>
           </g>
-          <!-- push branch -->
-          <g class="node node--push">
-            <circle cx="130" cy="90" r="24"/>
-            <text x="130" y="95">💪</text>
+
+          <!-- the five skills, every node the same size -->
+          <g class="mini-node">
+            <circle cx="150" cy="438" r="26"/>
+            <text class="mini-node__ico" x="150" y="438" dy="0.34em">📐</text>
+            <text class="mini-node__label" x="196" y="438" dy="0.34em">Incline Push-Up</text>
           </g>
-          <circle class="node-dot node-dot--push" cx="85" cy="45" r="9"/>
-          <circle class="node-dot node-dot--push node-dot--locked" cx="60" cy="10" r="7"/>
-          <!-- pull branch -->
-          <g class="node node--pull">
-            <circle cx="350" cy="90" r="24"/>
-            <text x="350" y="95">🧗</text>
+          <g class="mini-node">
+            <circle cx="150" cy="348" r="26"/>
+            <text class="mini-node__ico" x="150" y="348" dy="0.34em">💪</text>
+            <text class="mini-node__label" x="196" y="348" dy="0.34em">Push-Up</text>
           </g>
-          <circle class="node-dot node-dot--pull" cx="395" cy="45" r="9"/>
-          <circle class="node-dot node-dot--pull node-dot--locked" cx="420" cy="10" r="7"/>
-          <!-- legs branch -->
-          <g class="node node--legs">
-            <circle cx="130" cy="380" r="24"/>
-            <text x="130" y="385">🦵</text>
+          <g class="mini-node">
+            <circle cx="150" cy="258" r="26"/>
+            <text class="mini-node__ico" x="150" y="258" dy="0.34em">🔻</text>
+            <text class="mini-node__label" x="196" y="258" dy="0.34em">Dip</text>
           </g>
-          <circle class="node-dot node-dot--legs" cx="85" cy="425" r="9"/>
-          <circle class="node-dot node-dot--legs node-dot--locked" cx="60" cy="455" r="7"/>
-          <!-- core branch -->
-          <g class="node node--core">
-            <circle cx="350" cy="380" r="24"/>
-            <text x="350" y="385">🔥</text>
+          <g class="mini-node">
+            <circle cx="150" cy="168" r="26"/>
+            <text class="mini-node__ico" x="150" y="168" dy="0.34em">🧗</text>
+            <text class="mini-node__label" x="196" y="168" dy="0.34em">Pull-Up</text>
           </g>
-          <circle class="node-dot node-dot--core" cx="395" cy="425" r="9"/>
-          <circle class="node-dot node-dot--core node-dot--locked" cx="420" cy="455" r="7"/>
+          <g class="mini-node mini-node--goal">
+            <circle cx="150" cy="78" r="26"/>
+            <text class="mini-node__ico" x="150" y="78" dy="0.34em">🏆</text>
+            <text class="mini-node__label" x="196" y="78" dy="0.34em">Muscle-Up</text>
+          </g>
         </svg>
-        <span class="tag tag--push">Push</span>
-        <span class="tag tag--pull">Pull</span>
-        <span class="tag tag--legs">Legs</span>
-        <span class="tag tag--core">Core</span>
       </div>
     </div>
   </section>

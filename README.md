@@ -97,6 +97,14 @@ The palette is monochrome: near-black surfaces with white as the single
 accent, so `--lime` (a historical variable name) is now simply `#ffffff`
 and `--lime-dim` the muted step below it.
 
+Type is **Helvetica**, falling back to Arial (metrically identical) on
+Windows and Nimbus Sans on Linux. No webfont is loaded, so there's no
+render-blocking request to a font CDN and no flash of unstyled text.
+
+The hero shows a miniature of the tree — START climbing through Incline
+Push-Up, Push-Up, Dip and Pull-Up to Muscle-Up — with a gold arrow rising
+behind it to the goal. Gold appears only here and on mastered skills.
+
 The one deliberate exception is the five skill branches, which keep their
 colours (`--push`, `--pull`, `--legs`, `--core`, plus cardio). Those aren't
 decoration — they're how you tell one branch of the tree from another.
