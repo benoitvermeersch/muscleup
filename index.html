@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MuscleUp</title>
 <meta name="description" content="A skill tree to help you unlock calisthenics, isometrics and strengthen your body, with AI guidance along the way.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22></svg>">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0a0d12">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -21,7 +22,7 @@
 <header class="site-header">
   <div class="container nav">
     <a class="brand" href="#top">
-      <span class="brand__mark">MU</span>
+      <img class="brand__mark" src="assets/logo.svg" alt="" width="400" height="404">
       <span class="brand__name">Muscle<em>Up</em></span>
     </a>
     <nav class="nav__links" aria-label="Primary">
@@ -30,10 +31,6 @@
       <a href="#ai">AI Coach</a>
     </nav>
     <div class="nav__tools">
-      <div class="theme-toggle" role="group" aria-label="Color theme">
-        <button class="theme-toggle__btn" data-theme-set="light" aria-pressed="false"><span class="ico">☀</span>Light</button>
-        <button class="theme-toggle__btn" data-theme-set="dark" aria-pressed="true"><span class="ico">☾</span>Dark</button>
-      </div>
       <div id="auth-slot"></div>
     </div>
   </div>
@@ -237,7 +234,7 @@
 <footer class="site-footer">
   <div class="container footer__inner">
     <div class="brand">
-      <span class="brand__mark">MU</span>
+      <img class="brand__mark" src="assets/logo.svg" alt="" width="400" height="404">
       <span class="brand__name">Muscle<em>Up</em></span>
     </div>
     <p>&copy; 2026 MuscleUp. Level up your body.</p>
@@ -252,10 +249,6 @@
       <div class="tree-chrome__title">
         <small>MuscleUp</small>
         <strong>Skill Tree</strong>
-      </div>
-      <div class="theme-toggle" role="group" aria-label="Color theme">
-        <button class="theme-toggle__btn" data-theme-set="light" aria-pressed="false"><span class="ico">☀</span>Light</button>
-        <button class="theme-toggle__btn" data-theme-set="dark" aria-pressed="true"><span class="ico">☾</span>Dark</button>
       </div>
     </div>
 
@@ -309,8 +302,8 @@
     <button class="auth-modal__close" data-auth-close aria-label="Close">✕</button>
 
     <div class="auth-head">
-      <div class="brand">
-        <span class="brand__mark">MU</span>
+      <div class="brand brand--stacked">
+        <img class="brand__mark" src="assets/logo.svg" alt="" width="400" height="404">
         <span class="brand__name">Muscle<em>Up</em></span>
       </div>
       <h2 id="auth-title">Start your tree</h2>

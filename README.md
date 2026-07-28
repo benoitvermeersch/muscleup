@@ -76,12 +76,25 @@ don't treat a local-mode account as protecting anything.
 ```
 .
 ├── index.html          # landing page, auth dialog, skill-tree overlay
+├── assets/logo.svg     # the mark, white on transparent
+├── assets/favicon.svg  # the mark on a dark rounded tile
 ├── css/style.css       # landing page + skill tree styles
 ├── css/auth.css        # auth dialog, account chip, first-run check-in
 ├── js/auth-config.js   # Supabase URL + anon key (empty → local mode)
 ├── js/auth.js          # signup / login / verification + auth UI
-└── js/script.js        # theme, skill tree wheel, progression
+└── js/script.js        # skill tree wheel + progression
 ```
+
+## Look and feel
+
+The site is **dark only** — there's no light theme and no theme switcher.
+The palette is monochrome: near-black surfaces with white as the single
+accent, so `--lime` (a historical variable name) is now simply `#ffffff`
+and `--lime-dim` the muted step below it.
+
+The one deliberate exception is the five skill branches, which keep their
+colours (`--push`, `--pull`, `--legs`, `--core`, plus cardio). Those aren't
+decoration — they're how you tell one branch of the tree from another.
 
 ### Running locally
 

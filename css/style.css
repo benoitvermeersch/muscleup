@@ -13,8 +13,10 @@
   --text-dim: #9aa5b4;
   --text-faint: #626c7a;
 
-  --lime: #9dff5c;
-  --lime-dim: #6ee04a;
+  /* Brand accent. The name is historical — the palette is monochrome now,
+     so "lime" is simply white and "lime-dim" the muted step below it. */
+  --lime: #ffffff;
+  --lime-dim: #b8c0cc;
 
   --push: #ff6b5e;
   --pull: #4eb0ff;
@@ -25,7 +27,7 @@
   --radius-lg: 22px;
 
   --grid-line: rgba(255,255,255,0.035);
-  --glow-opacity: 0.16;
+  --glow-opacity: 0.07;
   --header-bg: rgba(10,13,18,0.75);
 
   /* skill-tree map surfaces (theme-aware) */
@@ -41,37 +43,6 @@
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-body: "Inter", sans-serif;
 }
-
-[data-theme="light"] {
-  --bg: #f6f8fc;
-  --bg-alt: #eef1f7;
-  --surface: #ffffff;
-  --surface-2: #f1f4f9;
-  --border: #dce1ea;
-
-  --text: #171c24;
-  --text-dim: #55606f;
-  --text-faint: #8590a0;
-
-  --lime: #57c22e;
-  --lime-dim: #46a821;
-
-  --grid-line: rgba(20,30,50,0.05);
-  --glow-opacity: 0.12;
-  --header-bg: rgba(255,255,255,0.82);
-
-  --tt-stage: #f4f6fb;
-  --tt-panel: rgba(255,255,255,0.9);
-  --tt-node: #eef1f6;
-  --tt-node-border: #d3dae4;
-  --tt-line: #b7c0cf;
-  --tt-sector: rgba(30,50,90,0.02);
-  --tt-sector-line: rgba(30,50,90,0.09);
-  --tt-node-text: #222833;
-}
-
-[data-theme="light"] .brand__mark { color: #ffffff; }
-[data-theme="light"] .btn--primary { color: #08110a; }
 
 * { box-sizing: border-box; }
 
@@ -139,8 +110,8 @@ ul { margin: 0; padding: 0; list-style: none; }
   opacity: var(--glow-opacity);
   pointer-events: none;
 }
-.bg-glow--push { top: -220px; left: -160px; background: var(--push); }
-.bg-glow--pull { top: -120px; right: -220px; background: var(--pull); }
+.bg-glow--push { top: -220px; left: -160px; background: #ffffff; }
+.bg-glow--pull { top: -120px; right: -220px; background: #aeb7c4; }
 
 /* ---------- buttons ---------- */
 
@@ -207,22 +178,16 @@ ul { margin: 0; padding: 0; list-style: none; }
   font-weight: 700;
 }
 
+/* the logo mark itself — white on dark, no container */
 .brand__mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, var(--lime), #4ee0a8);
-  color: #0a0d12;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.8rem;
+  display: block;
+  width: 30px;
+  height: auto;
+  color: var(--text);
 }
 
 .brand__name { font-size: 1.15rem; color: var(--text); }
-.brand__name em { color: var(--lime); font-style: normal; }
+.brand__name em { color: var(--text); font-style: normal; }
 
 .nav__links {
   display: flex;
@@ -276,8 +241,9 @@ ul { margin: 0; padding: 0; list-style: none; }
   line-height: 1.02;
 }
 
+/* monochrome: bright white fading into the dimmer grey step */
 .grad-text {
-  background: linear-gradient(90deg, var(--lime) 0%, #4ee0a8 45%, var(--pull) 100%);
+  background: linear-gradient(90deg, #ffffff 0%, #cdd4de 55%, #7d8796 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -617,41 +583,6 @@ ul { margin: 0; padding: 0; list-style: none; }
   .join__form { flex-direction: column; }
 }
 
-/* =================================================
-   Theme toggle (segmented Light / Dark)
-   ================================================= */
-
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-.theme-toggle__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  background: transparent;
-  color: var(--text-faint);
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 0.78rem;
-  padding: 6px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.theme-toggle__btn:hover { color: var(--text); }
-.theme-toggle__btn.is-active {
-  background: var(--surface-2);
-  color: var(--text);
-  box-shadow: inset 0 0 0 1px var(--border);
-}
-.theme-toggle__btn .ico { font-size: 0.9rem; line-height: 1; }
 .nav__tools { display: flex; align-items: center; gap: 16px; }
 
 /* =================================================
@@ -1078,7 +1009,6 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 @media (max-width: 720px) {
-  .tree-chrome__left .theme-toggle,
   .tree-switch__meta { display: none; }
   .tree-chrome__title { display: none; }
   .tree-switch__center { min-width: 130px; }

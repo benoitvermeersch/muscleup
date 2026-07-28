@@ -24,7 +24,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--lime), #4ee0a8);
+  background: #ffffff;
   color: #0a0d12;
   font-family: var(--font-display);
   font-weight: 700;
@@ -138,6 +138,14 @@
 
 .auth-head { text-align: center; margin-bottom: 20px; }
 .auth-head .brand { justify-content: center; margin-bottom: 12px; }
+
+/* stacked lockup: mark above the wordmark, as in the logo artwork */
+.brand--stacked {
+  flex-direction: column;
+  gap: 12px;
+}
+.brand--stacked .brand__mark { width: 52px; }
+.brand--stacked .brand__name { font-size: 1.3rem; }
 .auth-head h2 { font-size: 1.4rem; }
 .auth-head p { font-size: 0.88rem; color: var(--text-dim); margin-top: 6px; }
 
@@ -201,7 +209,7 @@
 .auth-field input:focus {
   outline: none;
   border-color: var(--lime-dim);
-  box-shadow: 0 0 0 3px rgba(157, 255, 92, 0.13);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.14);
 }
 .auth-field input.is-invalid {
   border-color: #ff6b5e;
@@ -229,12 +237,6 @@
 }
 .auth-error.is-visible { display: block; }
 
-/* the dark-theme salmon washes out on a white card */
-[data-theme="light"] .auth-error {
-  border-color: rgba(198, 40, 30, 0.35);
-  background: rgba(198, 40, 30, 0.06);
-  color: #b3271b;
-}
 
 .auth-form .btn { width: 100%; margin-top: 6px; }
 .auth-form.is-busy { opacity: 0.75; pointer-events: none; }
@@ -333,7 +335,6 @@
 
 .auth-sent__note { margin-top: 10px; font-size: 0.78rem; color: var(--text-faint); text-align: center; }
 .auth-sent__note.is-error { color: #ff9c92; }
-[data-theme="light"] .auth-sent__note.is-error { color: #b3271b; }
 
 /* =================================================
    First-run assessment ("what can you already do?")
@@ -411,7 +412,7 @@
 .assess__item:hover { border-color: var(--text-faint); }
 .assess__item.is-checked {
   border-color: var(--lime-dim);
-  background: rgba(157, 255, 92, 0.07);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .assess__item input { position: absolute; opacity: 0; pointer-events: none; }
@@ -471,8 +472,6 @@
   #auth-slot { gap: 6px; }
   #auth-slot .btn { padding: 8px 13px; font-size: 0.8rem; }
 
-  .theme-toggle__btn { font-size: 0; padding: 7px 10px; gap: 0; }
-  .theme-toggle__btn .ico { font-size: 0.95rem; }
 }
 
 /* Smallest phones: the MU mark carries the brand on its own */

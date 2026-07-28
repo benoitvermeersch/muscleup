@@ -4,7 +4,6 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   initWaitlist();
-  initTheme();
   initSkillTree();
 });
 
@@ -37,31 +36,6 @@ function initWaitlist() {
     }
     form.reset();
   });
-}
-
-/* ---------------------------------------------------------------------
-   Light / Dark theme (persisted, controls both landing page + overlay)
-   --------------------------------------------------------------------- */
-function initTheme() {
-  const KEY = "mu-theme";
-  const stored = localStorage.getItem(KEY);
-  const initial = stored === "light" || stored === "dark" ? stored : "dark";
-
-  function apply(theme) {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem(KEY, theme);
-    document.querySelectorAll("[data-theme-set]").forEach((btn) => {
-      const on = btn.getAttribute("data-theme-set") === theme;
-      btn.classList.toggle("is-active", on);
-      btn.setAttribute("aria-pressed", on ? "true" : "false");
-    });
-  }
-
-  document.querySelectorAll("[data-theme-set]").forEach((btn) => {
-    btn.addEventListener("click", () => apply(btn.getAttribute("data-theme-set")));
-  });
-
-  apply(initial);
 }
 
 /* ---------------------------------------------------------------------
@@ -918,10 +892,10 @@ function initSkillTree() {
     return { x: p.x, y: p.y };
   }
   function zoomAround(ux, uy, factor) {
-    // halve the zoom-out distance measured from the default (home) view
-    const prevMaxW = box.w * 1.3;
+    // The default view is the widest the map ever gets: you can zoom in and
+    // come back out to it, but never past it.
     const minW = box.w * 0.16;
-    const maxW = Math.max(homeW, homeW + 0.5 * (prevMaxW - homeW));
+    const maxW = homeW;
     let w = Math.min(Math.max(vb.w * factor, minW), maxW);
     const f = w / vb.w;
     vb.x = ux - (ux - vb.x) * f;
