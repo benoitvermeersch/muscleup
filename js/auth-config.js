@@ -31,5 +31,8 @@
 
 window.MU_AUTH_CONFIG = {
   SUPABASE_URL: "https://ixcmhtoixwewbaqtuimb.supabase.co",
+
+  // Either key format works here: the legacy "anon" JWT (eyJ...) or the
+  // newer publishable key (sb_publishable_...). Both are public by design.
   SUPABASE_ANON_KEY: "sb_publishable_6FBYhjIsyScYEihaTNxr9w_417OyU3I",
 };

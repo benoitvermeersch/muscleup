@@ -36,8 +36,32 @@ which runs entirely from the browser. To switch it on:
 4. Authentication → URL Configuration → add this site's URL to **Site URL**
    and **Redirect URLs**, so the link in the email lands back here.
 
-The anon key is meant to be public — it ships to the browser on every
-Supabase site, and row-level security is what protects data, not the key.
+5. **Add custom SMTP** — Project Settings → Authentication → SMTP Settings.
+   Without this almost nobody receives the email (see below).
+
+Either key format works: the legacy `anon` JWT (`eyJ...`) or the newer
+publishable key (`sb_publishable_...`). Both are meant to be public — they
+ship to the browser on every Supabase site, and row-level security is what
+protects data, not the key.
+
+### Why the confirmation email doesn't arrive
+
+Supabase's **built-in mailer is for testing only**. Two limits bite hard:
+
+- it delivers **only to addresses belonging to members of your Supabase
+  organisation** — signing up with any other address sends nothing, and the
+  signup still returns HTTP 200, so it looks like it worked
+- it's capped at roughly **2 emails per hour**
+
+So a project with default settings genuinely cannot email your users. Fix it
+by pointing Supabase at a real SMTP provider (Resend, Postmark, SendGrid,
+Brevo, Mailgun — all have free tiers) under **Project Settings →
+Authentication → SMTP Settings**, then raise the rate limit under
+Authentication → Rate Limits.
+
+The signup form now detects both cases rather than showing a hopeful "check
+your inbox": if Supabase reports no mail was dispatched, or the send was
+rate-limited, it says so and names the fix.
 
 **Until those two values are filled in, the site runs in local mode:** the
 rules are all still enforced (password length, verify-before-login,

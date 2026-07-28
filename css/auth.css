@@ -320,6 +320,17 @@
 }
 .auth-sent__actions .btn { flex: 1; }
 
+.auth-sent__fine {
+  margin-top: 16px;
+  padding: 11px 13px;
+  border-radius: var(--radius);
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
 .auth-sent__note { margin-top: 10px; font-size: 0.78rem; color: var(--text-faint); text-align: center; }
 .auth-sent__note.is-error { color: #ff9c92; }
 [data-theme="light"] .auth-sent__note.is-error { color: #b3271b; }

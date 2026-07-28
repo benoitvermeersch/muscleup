@@ -178,9 +178,16 @@
 
   // GoTrue has spoken several error shapes over the years — check them all
   function supabaseMessage(payload, status) {
+    const code = String((payload && payload.error_code) || "");
     const raw =
       (payload && (payload.error_description || payload.msg || payload.message || payload.error)) || "";
     const text = String(raw);
+
+    // the built-in Supabase mailer caps at a couple of sends per hour
+    if (code === "over_email_send_rate_limit" || /email rate limit/i.test(text)) {
+      return "Supabase's email limit was hit — it only sends a couple of messages an hour. " +
+        "Wait an hour, or set up custom SMTP in the Supabase dashboard.";
+    }
     if (/email not confirmed/i.test(text)) {
       return "That email hasn't been confirmed yet — check your inbox for the link.";
     }
@@ -192,6 +199,12 @@
     }
     if (/rate limit|too many/i.test(text)) {
       return "Too many attempts just now — wait a minute and try again.";
+    }
+    if (status === 401 || status === 403) {
+      return "Supabase rejected the API key — check SUPABASE_ANON_KEY in js/auth-config.js.";
+    }
+    if (/error sending|smtp|mailer/i.test(text)) {
+      return `Supabase accepted the account but couldn't send the email: ${text}`;
     }
     return text || `Something went wrong (HTTP ${status}).`;
   }
@@ -222,6 +235,24 @@
           refreshToken: data.refresh_token || null,
         });
         return { needsVerification: false, email };
+      }
+
+      // An existing account comes back obfuscated (empty `identities`) so the
+      // form can't be used to test which addresses are registered. No mail is
+      // sent in that case, so saying "check your inbox" would be a lie.
+      if (data && Array.isArray(data.identities) && data.identities.length === 0) {
+        throw new Error("That email already has an account. Try logging in instead.");
+      }
+
+      // Supabase stamps this the moment it hands the mail to its sender.
+      // Missing it means nothing was dispatched, however healthy the 200 looked.
+      if (data && !data.confirmation_sent_at) {
+        console.warn("[MuscleUp] Supabase returned no confirmation_sent_at:", data);
+        throw new Error(
+          "Supabase created the account but reported no email being sent. " +
+          "Its built-in mailer only delivers to members of your Supabase org — " +
+          "add custom SMTP under Project Settings → Authentication to mail anyone else."
+        );
       }
       return { needsVerification: true, email };
     }
@@ -404,6 +435,13 @@
     _consumeLocalVerification: consumeLocalVerification,
     _consumeSupabaseRedirect: consumeSupabaseRedirect,
   };
+
+  // "why didn't I get an email" is almost always "it never left this browser"
+  console.info(
+    REMOTE
+      ? `[MuscleUp] auth: Supabase mode → ${SB_URL}`
+      : "[MuscleUp] auth: LOCAL mode — no email is sent. Fill in js/auth-config.js to use Supabase."
+  );
 })(window);
 
 
@@ -526,6 +564,12 @@ document.addEventListener("DOMContentLoaded", () => {
         `<p>This build isn't wired to Supabase, so here is the email we <em>would</em> have sent:</p>` +
         `<a class="auth-sent__link" href="${escapeHtml(previewLink)}">Confirm my email address</a>` +
         `</div>`;
+    }
+
+    if (!previewLink) {
+      html += `<p class="auth-sent__fine">Nothing after a minute? Check spam. Supabase's built-in ` +
+        `mailer only delivers to members of your Supabase organisation and caps at a couple of ` +
+        `sends per hour — add custom SMTP to mail everyone else.</p>`;
     }
 
     html += `<div class="auth-sent__actions">` +
