@@ -14,6 +14,7 @@
      addRepsTo / setRepsTo         → log reps (persists + notifies)
      rankIndex(reps)               → 0..4 index into RANKS
      isUnlocked(cat, node)         → is this skill open yet
+     prereqsOf(catKey, node)       → [{ catKey, id }] standing in its way
      skillByKey("push:pushup")     → { cat, node }
      getFavourite() / setFavourite / toggleFavourite / isFavourite
      stats()                       → { totalReps, categoryReps, topCategory, … }
@@ -33,195 +34,158 @@
   const FAMILY = {
     push:        { name: "Push-Ups",        color: "#e8873a", icon: "💪" },
     dip:         { name: "Dips",            color: "#d9a521", icon: "🔻" },
-    planche:     { name: "Planche",         color: "#d6443c", icon: "🤸" },
-    ring:        { name: "Rings / Cross",   color: "#20a89f", icon: "⭕" },
-    ringPlanche: { name: "Ring Planche",    color: "#3d86d6", icon: "🌀" },
-    ringMaltese: { name: "Ring Maltese",    color: "#8a5cd0", icon: "✳️" },
+    pike:        { name: "Pike & Press",    color: "#2493b0", icon: "🔺" },
     handstand:   { name: "Handstand",       color: "#3fae6b", icon: "🙃" },
+    planche:     { name: "Planche",         color: "#d6443c", icon: "🤸" },
 
     pull:        { name: "Pull-Ups",        color: "#3d86d6", icon: "🧗" },
+    muscleup:    { name: "Muscle-Up",       color: "#d9a521", icon: "🔝" },
     frontLever:  { name: "Front Lever",     color: "#3fae6b", icon: "🦅" },
-    victorian:   { name: "Victorian",       color: "#8a5cd0", icon: "👑" },
     backLever:   { name: "Back Lever",      color: "#20a89f", icon: "🔄" },
     hefesto:     { name: "Hefesto",         color: "#e8873a", icon: "🔥" },
 
     squat:       { name: "Squat",           color: "#3d86d6", icon: "🦵" },
-    sissy:       { name: "Sissy Squat",     color: "#20a89f", icon: "🦿" },
-    shrimp:      { name: "Shrimp Squat",    color: "#3fae6b", icon: "🦐" },
-    legext:      { name: "Leg Ext / Press", color: "#e8873a", icon: "🏋️" },
     hamstring:   { name: "Hamstring",       color: "#d6443c", icon: "🌉" },
 
-    sit:         { name: "L-Sit Line",      color: "#2493b0", icon: "🪑" },
+    hollow:      { name: "Hollow & Hang",   color: "#2493b0", icon: "🛶" },
+    sit:         { name: "L-Sit Line",      color: "#20a89f", icon: "🪑" },
+    flag:        { name: "Flags & Levers",  color: "#d152a3", icon: "🚩" },
     dragon:      { name: "Dragon Flag",     color: "#8a5cd0", icon: "🐉" },
-    reverse:     { name: "Reverse Planche", color: "#d152a3", icon: "🔃" },
 
     cardio:      { name: "Cardio",          color: "#20a89f", icon: "🏃" },
   };
 
   /* ------------------------------------------------------------------
      The five branches
+
+     A node's prerequisites are its `parent` plus anything in `extra`.
+     Both accept "id" for a skill in the same branch and "branch:id" for
+     one in another — the tree is a wheel, and a few lines genuinely
+     reach across it (a burpee is a squat and a push-up; hanging leg
+     raises need a bar you can already hang from).
+
+     `connector` says how those prerequisites combine:
+
+       "AND"      every one of them has to reach Novice
+       "OR"       any one of them opens the skill
+       (omitted)  same as OR — an `extra` with no connector is a second
+                  route in, never an extra hurdle
+
+     `legendary` marks the end-of-line feats; `locked` is a hard gate
+     that no amount of reps opens.
      ------------------------------------------------------------------ */
   const CATEGORIES = [
     {
       key: "push", label: "Push", icon: "💪", color: "#ff6b5e", complete: false,
       nodes: [
-        // main pushing line
-        { id: "pushup",    label: "Push-Up",                 parent: "START",    fam: "push" },
-        { id: "ringpush",  label: "Ring Push-Up",            parent: "pushup",   fam: "push" },
-        { id: "ringflies", label: "Ring Flies",              parent: "ringpush", fam: "push" },
-        { id: "sarflies",  label: "Straight-Arm Ring Flies", parent: "ringflies",fam: "push" },
-        { id: "oapush",    label: "One-Arm Push-Up",         parent: "pushup",   fam: "push", legendary: true },
+        // the push-up line itself
+        { id: "inclinepush",   label: "Inclined Push-Up",  parent: "START",       fam: "push" },
+        { id: "kneepush",      label: "Knee Push-Up",      parent: "inclinepush", fam: "push" },
+        { id: "pushup",        label: "Push-Up",           parent: "kneepush",    fam: "push" },
+        { id: "oapush",        label: "One-Arm Push-Up",   parent: "pushup",      fam: "push", legendary: true },
+        { id: "explosivepush", label: "Explosive Push-Up", parent: "pushup",      fam: "push" },
 
         // dips
-        { id: "dip",     label: "Dip",             parent: "START",  fam: "dip" },
-        { id: "oadip",   label: "One-Arm Dip",     parent: "dip",    fam: "dip", legendary: true },
-        { id: "impdip",  label: "Impossible Dip",  parent: "dip",    fam: "dip" },
-        { id: "morozov", label: "Morozov",         parent: "impdip", fam: "dip", legendary: true },
+        { id: "dip",    label: "Dip",            parent: "pushup", fam: "dip" },
+        { id: "impdip", label: "Impossible Dip", parent: "dip",    fam: "dip", legendary: true },
 
-        // planche line
-        { id: "planchelean",   label: "Planche Lean",           parent: "START",       fam: "planche" },
-        { id: "pseudopp",      label: "Pseudo Planche Push-Up", parent: "planchelean", fam: "planche" },
-        { id: "planchepush",   label: "Planche Push-Up",        parent: "pseudopp",    fam: "planche" },
-        { id: "planche",       label: "Planche",                parent: "planchepush", fam: "planche" },
-        { id: "oaplanche",     label: "One-Arm Planche",        parent: "planche",     fam: "planche", legendary: true },
-        { id: "oaplanchepush", label: "One-Arm Planche Push-Up",parent: "oaplanche",   fam: "planche", legendary: true },
-        { id: "maltese",       label: "Maltese",                parent: "planchepush", fam: "planche", legendary: true },
-        { id: "bicepplanche",  label: "Bicep Planche",          parent: "planchepush", fam: "planche" },
-        { id: "oabicep",       label: "One-Arm Bicep Planche",  parent: "bicepplanche",fam: "planche", legendary: true },
+        // pike work — the road to a handstand
+        { id: "pikepush",    label: "Pike Push-Up",          parent: "pushup",   fam: "pike" },
+        { id: "diamondpush", label: "Diamond Push-Up",       parent: "pikepush", fam: "push" },
+        { id: "elevpike",    label: "Elevated Pike Push-Up", parent: "pikepush", fam: "pike" },
 
-        // ring strength line
-        { id: "ringturn",     label: "Ring Turn Out",     parent: "START",       fam: "ring" },
-        { id: "ringdip",      label: "Ring Dip",          parent: "ringturn",    fam: "ring" },
-        { id: "ringmu",       label: "Ring Muscle-Up",    parent: "ringdip",     fam: "ring" },
-        { id: "wideringmu",   label: "Wide Ring Muscle-Up",parent: "ringmu",     fam: "ring" },
-        { id: "bulgariandip", label: "Bulgarian Dip",     parent: "wideringmu",  fam: "ring" },
-        { id: "ironcross",    label: "Iron Cross",        parent: "bulgariandip",fam: "ring", legendary: true },
-        { id: "ironcrosspress",label: "Iron Cross Press", parent: "ironcross",   fam: "ring", legendary: true },
-        { id: "butterfly",    label: "Butterfly",         parent: "ironcross",   fam: "ring" },
-        { id: "butterflyinvic",label: "Butterfly → Inv. Iron Cross", parent: "butterfly", fam: "ring", legendary: true },
-        { id: "azarianic",    label: "Azarian to Iron Cross", parent: "ironcross", fam: "ring", legendary: true },
+        // handstand line
+        { id: "hswall",      label: "Handstand Against the Wall",         parent: "elevpike",   fam: "handstand" },
+        { id: "handstand",   label: "Handstand",                          parent: "hswall",     fam: "handstand", legendary: true },
+        { id: "oahandstand", label: "One-Arm Handstand",                  parent: "handstand",  fam: "handstand", legendary: true },
+        { id: "hspushwall",  label: "Handstand Push-Up Against the Wall", parent: "hswall",     fam: "handstand" },
+        { id: "hspush",      label: "Handstand Push-Up",                  parent: "hspushwall", fam: "handstand" },
+        { id: "hsclap",      label: "Handstand Clap Push-Up",             parent: "hspush",     fam: "handstand" },
 
-        // ring planche line
-        { id: "ringhs",         label: "Ring Handstand",      parent: "ringturn",  fam: "ringPlanche" },
-        { id: "ringplanche",    label: "Ring Planche",        parent: "ringhs",    fam: "ringPlanche", legendary: true },
-        { id: "ringplanchepress",label: "Ring Planche Press", parent: "ringplanche",fam: "ringPlanche", legendary: true },
-        { id: "ringvictorian",  label: "Ring Victorian Cross",parent: "ringplanche",fam: "ringPlanche", legendary: true },
+        // straight-arm work — planche lean through to the planche
+        { id: "planchelean", label: "Planche Lean",           parent: "pikepush",    fam: "planche" },
+        { id: "pseudopp",    label: "Pseudo Planche Push-Up", parent: "planchelean", fam: "planche" },
+        { id: "hold90",      label: "90° Hold",               parent: "pseudopp",    fam: "planche" },
+        { id: "hs90push",    label: "90° Handstand Push-Up",  parent: "hold90",      fam: "handstand", extra: ["hspushwall"] },
+        { id: "frogstand",   label: "Frog Stand",             parent: "diamondpush", fam: "planche" },
+        { id: "elbowlever",  label: "Elbow Lever",            parent: "explosivepush", fam: "planche" },
+        { id: "tuckplanche", label: "Tuck Planche",           parent: "frogstand",   fam: "planche", extra: ["elbowlever"] },
 
-        // ring maltese line
-        { id: "ringmaltese",       label: "Ring Maltese",              parent: "ringturn",   fam: "ringMaltese", legendary: true },
-        { id: "vangelder",         label: "Van Gelder",                parent: "ringmaltese",fam: "ringMaltese", legendary: true },
-        { id: "azarianpm",         label: "Azarian to Planche/Maltese",parent: "vangelder",  fam: "ringMaltese", legendary: true },
-        { id: "maltesepressinvic", label: "Maltese Press → Inv. IC",   parent: "ringmaltese",fam: "ringMaltese", legendary: true },
-
-        // legendary ring capstones
-        { id: "invic",        label: "Inverted Iron Cross",           parent: "ironcrosspress",  fam: "ring",        legendary: true },
-        { id: "invbutterfly", label: "Inverted Butterfly",            parent: "butterflyinvic",  fam: "ring",        legendary: true },
-        { id: "zanetti",      label: "Zanetti",                       parent: "azarianpm",       fam: "ringMaltese", legendary: true },
-        { id: "carmona",      label: "Carmona",                       parent: "maltesepressinvic",fam: "ringMaltese",legendary: true },
-        { id: "flvictorian",  label: "Front Lever → Victorian Cross", parent: "ringvictorian",   fam: "ringPlanche", legendary: true, locked: true, lockReason: "Requires Front Lever (Pull branch)" },
-        { id: "victorianrp",  label: "Victorian Cross → Reverse Planche", parent: "flvictorian", fam: "ringPlanche", legendary: true, locked: true, lockReason: "Requires Reverse Planche (Core branch)" },
-        { id: "flrp",         label: "Front Lever → Reverse Planche", parent: "ringplanchepress",fam: "ringPlanche", legendary: true, locked: true, lockReason: "Requires Front Lever (Pull branch)" },
-
-        // handstand sub-line
-        { id: "handstand",   label: "Handstand (Wall HS)",       parent: "START",     fam: "handstand" },
-        { id: "hspush",      label: "Handstand Push-Up",         parent: "handstand", fam: "handstand" },
-        { id: "imptiger",    label: "Imp. Tigerbend HS Push-Up", parent: "hspush",    fam: "handstand", legendary: true },
-        { id: "maltesepress",label: "Maltese Press",             parent: "imptiger",  fam: "handstand", legendary: true, connector: "OR", extra: ["planchepress"] },
-        { id: "hspike",      label: "HS Pike Press",             parent: "handstand", fam: "handstand" },
-        { id: "planchepress",label: "Planche Press",             parent: "hspike",    fam: "handstand", legendary: true },
-        { id: "oahandstand", label: "One-Arm Handstand",         parent: "handstand", fam: "handstand", legendary: true },
-        { id: "oahspress",   label: "One-Arm HS Press",          parent: "oahandstand",fam: "handstand", legendary: true },
+        { id: "straddleplanche", label: "Straddle Planche", parent: "tuckplanche", fam: "planche", legendary: true, connector: "OR", extra: ["hold90"] },
+        { id: "planche",         label: "Planche",           parent: "straddleplanche", fam: "planche", legendary: true },
+        { id: "planchepush",     label: "Planche Push-Up",   parent: "planche", fam: "planche" },
+        { id: "maltese",         label: "Maltese",           parent: "planche", fam: "planche", legendary: true },
+        { id: "oaplanche",       label: "One-Arm Planche",   parent: "planche", fam: "planche", legendary: true },
       ],
     },
 
     {
       key: "pull", label: "Pull", icon: "🧗", color: "#4eb0ff", complete: false,
       nodes: [
-        { id: "pullup",  label: "Pull-Up",           parent: "START",  fam: "pull" },
-        { id: "ringpull",label: "Ring Pull-Up",      parent: "pullup", fam: "pull" },
-        { id: "barmu",   label: "Bar Muscle-Up",     parent: "ringpull",fam: "pull", connector: "AND", extra: ["pullup"] },
-        { id: "oachin",  label: "One-Arm Chin-Up",   parent: "pullup", fam: "pull", legendary: true },
-        { id: "oapull",  label: "One-Arm Pull-Up",   parent: "pullup", fam: "pull", legendary: true },
-        { id: "oamu",    label: "One-Arm Muscle-Up", parent: "barmu",  fam: "pull", legendary: true },
+        // getting to a pull-up
+        { id: "deadhang", label: "Dead Hang",                 parent: "START",    fam: "pull" },
+        { id: "jumpneg",  label: "Jumping Negative Pull-Ups", parent: "deadhang", fam: "pull" },
+        { id: "pullup",   label: "Pull-Up",                   parent: "jumpneg",  fam: "pull" },
 
-        { id: "frontlever",label: "Front Lever",             parent: "pullup",    fam: "frontLever" },
-        { id: "oafl",      label: "One-Arm Front Lever",     parent: "frontlever",fam: "frontLever", legendary: true },
-        { id: "oaflpu",    label: "One-Arm Front Lever Pull-Up",parent: "oafl",   fam: "frontLever", legendary: true },
-        { id: "flpull",    label: "Front Lever Pull",        parent: "frontlever",fam: "frontLever" },
-        { id: "flpu",      label: "Front Lever Pull-Up",     parent: "flpull",    fam: "frontLever" },
+        // variations off the bar
+        { id: "auspull",    label: "Australian Pull-Up",   parent: "pullup",     fam: "pull" },
+        { id: "chinup",     label: "Chin-Up",              parent: "auspull",    fam: "pull" },
+        { id: "oadeadhang", label: "One-Arm Dead Hang",    parent: "pullup",     fam: "pull" },
+        { id: "chesttobar", label: "Chest to Bar Pull-Up", parent: "pullup",     fam: "pull" },
+        { id: "naveltobar", label: "Navel to Bar Pull-Up", parent: "chesttobar", fam: "pull" },
 
-        { id: "pbvictorian",   label: "PB Victorian",   parent: "frontlever",  fam: "victorian" },
-        { id: "floorvictorian",label: "Floor Victorian",parent: "pbvictorian", fam: "victorian", legendary: true },
+        // one arm
+        { id: "oapull", label: "One-Arm Pull-Up",   parent: "pullup", fam: "pull",     legendary: true, connector: "OR", extra: ["oadeadhang"] },
+        { id: "oamu",   label: "One-Arm Muscle-Up", parent: "oapull", fam: "muscleup", legendary: true },
 
-        { id: "backlever",     label: "Back Lever",              parent: "START",      fam: "backLever" },
-        { id: "backleverpu",   label: "Back Lever Pull-Up",      parent: "backlever",  fam: "backLever" },
-        { id: "oabacklever",   label: "One-Arm Back Lever",      parent: "backleverpu",fam: "backLever", legendary: true },
-        { id: "oabackleverpu", label: "One-Arm Back Lever Pull-Up",parent: "oabacklever",fam: "backLever", legendary: true },
+        // muscle-up line
+        { id: "muscleup",    label: "Muscle-Up",                 parent: "chesttobar", fam: "muscleup", legendary: true },
+        { id: "mujump",      label: "Muscle-Up Jump on the Bar", parent: "muscleup",   fam: "muscleup" },
+        { id: "mubackclap",  label: "Muscle-Up Back Clap",       parent: "muscleup",   fam: "muscleup" },
+        { id: "explosivemu", label: "Explosive Muscle-Up",       parent: "muscleup",   fam: "muscleup" },
 
-        { id: "hefesto",        label: "Hefesto",                    parent: "backleverpu",  fam: "hefesto", legendary: true },
-        { id: "hefestofrombl",  label: "Hefesto From Back Lever",    parent: "hefesto",      fam: "hefesto", legendary: true },
-        { id: "oahefestofrombl",label: "One-Arm Hefesto From BL",    parent: "hefestofrombl",fam: "hefesto", legendary: true },
-        { id: "oahefesto",      label: "One-Arm Hefesto",            parent: "hefesto",      fam: "hefesto", legendary: true },
-        { id: "pelican",        label: "Pelican",                    parent: "backleverpu",  fam: "hefesto" },
+        // front lever line
+        { id: "straddlefl", label: "Straddle Front Lever", parent: "naveltobar", fam: "frontLever" },
+        { id: "frontlever", label: "Front Lever",          parent: "straddlefl", fam: "frontLever", legendary: true },
+        { id: "oafl",       label: "One-Arm Front Lever",  parent: "frontlever", fam: "frontLever", legendary: true },
+        { id: "flpu",       label: "Front Lever Pull-Up",  parent: "frontlever", fam: "frontLever" },
       ],
     },
 
     {
       key: "legs", label: "Legs", icon: "🦵", color: "#c084ff", complete: false,
       nodes: [
-        // squat main line
-        { id: "squat",      label: "Squat",              parent: "START",       fam: "squat" },
-        { id: "pistol",     label: "Pistol Squat",       parent: "squat",       fam: "squat" },
-        { id: "shrimp",     label: "Shrimp Squat",       parent: "pistol",      fam: "shrimp" },
-        { id: "sissy",      label: "Sissy Squat",        parent: "shrimp",      fam: "sissy" },
-        { id: "hawaiian",   label: "Hawaiian Squat",     parent: "sissy",       fam: "squat" },
-        { id: "naturalext", label: "Natural Leg Extension",parent: "hawaiian",  fam: "legext" },
-        { id: "naturalpress",label: "Natural Leg Press", parent: "naturalext",  fam: "legext" },
-        { id: "matrixext",  label: "Matrix Leg Extension",parent: "naturalpress",fam: "legext" },
-        { id: "legextlever",label: "Leg Extension Lever",parent: "matrixext",   fam: "legext", legendary: true },
+        { id: "lunge",  label: "Lunge",        parent: "START", fam: "squat" },
+        { id: "squat",  label: "Squat",        parent: "lunge", fam: "squat" },
+        { id: "pistol", label: "Pistol Squat", parent: "squat", fam: "squat" },
+        { id: "nordic", label: "Nordic Curl",  parent: "lunge", fam: "hamstring" },
 
-        // sissy branch
-        { id: "sissy1leg",    label: "One-Leg Sissy Squat",         parent: "sissy",         fam: "sissy" },
-        { id: "sissy1legelev",label: "Elevated One-Leg Sissy Squat",parent: "sissy1leg",     fam: "sissy" },
-        { id: "shrimpblaster",label: "Shrimp Squat Blaster",        parent: "sissy1legelev", fam: "sissy", legendary: true },
-
-        // shrimp branch
-        { id: "shrimpelev", label: "Elevated Shrimp Squat", parent: "shrimp", fam: "shrimp" },
-
-        // leg-ext / press branches
-        { id: "naturalext1leg",     label: "One-Leg Natural Leg Ext.",    parent: "naturalext",   fam: "legext" },
-        { id: "naturalpress1leg",   label: "One-Leg Natural Leg Press",   parent: "naturalpress", fam: "legext" },
-        { id: "naturalpress1legelev",label: "Elev. One-Leg Natural Leg Press",parent: "naturalpress1leg",fam: "legext", legendary: true },
-        { id: "matrixext1leg",      label: "One-Leg Matrix Leg Ext.",     parent: "matrixext",    fam: "legext" },
-        { id: "matrixext1legelev",  label: "Elev. One-Leg Matrix Leg Ext.",parent: "matrixext1leg",fam: "legext", legendary: true },
-        { id: "legextlever1leg",    label: "One-Leg Leg Extension Lever", parent: "legextlever",  fam: "legext", legendary: true },
-
-        // hamstring line
-        { id: "hambridge",     label: "Hamstring Bridge",          parent: "START",     fam: "hamstring" },
-        { id: "nordic",        label: "Nordic Hamstring Curl",     parent: "hambridge", fam: "hamstring" },
-        { id: "nordic1leg",    label: "One-Leg Nordic Curl",       parent: "nordic",    fam: "hamstring" },
-        { id: "invnordic",     label: "Inverted Nordic Curl",      parent: "nordic1leg",fam: "hamstring", legendary: true },
-        { id: "elev1legnordic",label: "Elev. One-Leg Nordic Curl", parent: "invnordic", fam: "hamstring", legendary: true },
-        { id: "oa1leginvnordic",label: "One-Leg Inv. Nordic Curl", parent: "invnordic", fam: "hamstring", legendary: true },
+        // squat down, push up, jump — it needs both halves
+        { id: "burpee", label: "Burpee", parent: "squat", fam: "squat", connector: "AND", extra: ["push:pushup"] },
       ],
     },
 
     {
       key: "core", label: "Core", icon: "🔥", color: "#ffd24e", complete: true,
       nodes: [
-        { id: "tucksit", label: "Tuck-Sit", parent: "START",   fam: "sit" },
-        { id: "lsit",    label: "L-Sit",    parent: "tucksit", fam: "sit" },
-        { id: "vsit",    label: "V-Sit",    parent: "lsit",    fam: "sit" },
-        { id: "manna",   label: "Manna",    parent: "vsit",    fam: "sit", legendary: true },
+        { id: "boathold",  label: "Boat Hold",  parent: "START",    fam: "hollow" },
+        { id: "plank",     label: "Plank",      parent: "boathold", fam: "hollow" },
+        { id: "legraises", label: "Leg Raises", parent: "plank",    fam: "hollow" },
+        { id: "hangingleg",label: "Hanging Leg Raises", parent: "legraises", fam: "hollow", connector: "AND", extra: ["pull:deadhang"] },
 
-        { id: "plank",        label: "Plank",              parent: "START",       fam: "dragon" },
-        { id: "dragonflag",   label: "Dragon Flag",        parent: "plank",       fam: "dragon" },
-        { id: "oadragonflag", label: "One-Arm Dragon Flag",parent: "dragonflag",  fam: "dragon", legendary: true },
-        { id: "dragonpress",  label: "Dragon Press",       parent: "oadragonflag",fam: "dragon", legendary: true },
-        { id: "oadragonpress",label: "One-Arm Dragon Press",parent: "dragonpress",fam: "dragon", legendary: true },
+        // the L-sit line
+        { id: "tucksit",  label: "Tuck Sit",      parent: "plank",   fam: "sit" },
+        { id: "lsit",     label: "L-Sit",         parent: "tucksit", fam: "sit", legendary: true },
+        { id: "lsitpull", label: "L-Sit Pull-Up", parent: "lsit",    fam: "sit", connector: "AND", extra: ["pull:pullup"] },
+        { id: "vsit",     label: "V-Sit",         parent: "lsit",    fam: "sit", legendary: true },
+        { id: "manna",    label: "Manna",         parent: "vsit",    fam: "sit", legendary: true },
 
-        { id: "reverseplanche",label: "Reverse Planche", parent: "START", fam: "reverse", locked: true, lockReason: "Requires Pull-Up (Pull branch)" },
-        { id: "pullfrreverse", label: "Pull-Up → Front Lever → Reverse Planche", parent: "reverseplanche", fam: "reverse", legendary: true, locked: true, lockReason: "Requires Front Lever (Pull branch)" },
+        // Flags and levers: whole-body holds that grow out of the plank
+        { id: "humanflag",   label: "Human Flag",         parent: "plank",     fam: "flag",      legendary: true },
+        { id: "backlever",   label: "Back Lever",         parent: "plank",     fam: "backLever", legendary: true, extra: ["humanflag"] },
+        { id: "dragonflag",  label: "Dragon Flag",        parent: "backlever", fam: "dragon",    legendary: true },
+        { id: "oabacklever", label: "One-Arm Back Lever", parent: "backlever", fam: "backLever", legendary: true },
+        { id: "hefesto",     label: "Hefesto",            parent: "backlever", fam: "hefesto",   legendary: true },
       ],
     },
 
@@ -272,13 +236,10 @@
   // First-run check-in: the ground-floor skill of each line. Ticking one
   // credits it with UNLOCK_REPS, which opens everything sitting above it.
   const STARTERS = [
-    { cat: "push",   id: "pushup",       icon: "💪", target: "10 clean reps" },
-    { cat: "push",   id: "dip",          icon: "🔻", target: "5 full-depth reps" },
-    { cat: "pull",   id: "pullup",       icon: "🧗", target: "1 dead-hang rep" },
-    { cat: "legs",   id: "squat",        icon: "🦵", target: "20 deep reps" },
-    { cat: "legs",   id: "hambridge",    icon: "🌉", target: "10 controlled reps" },
-    { cat: "core",   id: "plank",        icon: "🔥", target: "a 30-second hold" },
-    { cat: "core",   id: "tucksit",      icon: "🪑", target: "a 15-second hold" },
+    { cat: "push",   id: "inclinepush",  icon: "💪", target: "10 clean reps" },
+    { cat: "pull",   id: "deadhang",     icon: "🧗", target: "a 30-second hang" },
+    { cat: "legs",   id: "lunge",        icon: "🦵", target: "10 reps each leg" },
+    { cat: "core",   id: "boathold",     icon: "🛶", target: "a 30-second hold" },
     { cat: "cardio", id: "jumpingjacks", icon: "🏃", target: "50 unbroken" },
   ];
 
@@ -396,9 +357,37 @@
 
   function rankIndex(reps) { return Math.min(RANKS.length - 1, Math.floor(reps / REPS_PER_RANK)); }
 
+  /* ------------------------------------------------------------------
+     Prerequisites
+
+     A reference is "id" for a skill on the same branch or "branch:id"
+     for one on another — see the note above CATEGORIES. `homeCat` is the
+     branch the reference was written on, which is what a bare id means.
+     ------------------------------------------------------------------ */
+  function resolveRef(homeCat, ref) {
+    const text = String(ref || "");
+    const split = text.indexOf(":");
+    return split === -1
+      ? { catKey: homeCat, id: text }
+      : { catKey: text.slice(0, split), id: text.slice(split + 1) };
+  }
+
+  // everything standing between you and this skill, in reading order
+  function prereqsOf(catKey, node) {
+    const refs = [];
+    if (node.parent && node.parent !== "START") refs.push(resolveRef(catKey, node.parent));
+    (node.extra || []).forEach((ref) => refs.push(resolveRef(catKey, ref)));
+    return refs;
+  }
+
+  function refMet(ref) { return repsOf(ref.catKey, ref.id) >= UNLOCK_REPS; }
+
   function isUnlocked(cat, node) {
-    if (node.parent === "START") return true;            // roots (closest to START) always open
-    return repsOf(cat.key, node.parent) >= UNLOCK_REPS;  // parent must reach Novice
+    const refs = prereqsOf(cat.key, node);
+    if (!refs.length) return true;   // sits on START — always open
+    // AND wants every prerequisite at Novice. Anything else — an explicit
+    // OR, or an `extra` that just marks a second way in — opens on the first.
+    return node.connector === "AND" ? refs.every(refMet) : refs.some(refMet);
   }
 
   /* ------------------------------------------------------------------
@@ -515,6 +504,7 @@
     setRepsTo,
     rankIndex,
     isUnlocked,
+    prereqsOf,
     getFavourite,
     setFavourite,
     toggleFavourite,

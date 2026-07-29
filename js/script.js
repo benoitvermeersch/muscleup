@@ -86,7 +86,7 @@ function initWaitlist() {
    --------------------------------------------------------------------- */
 const {
   FAMILY, CATEGORIES, RANKS, REPS_PER_RANK, UNLOCK_REPS, STARTERS,
-  repsOf, addRepsTo, setRepsTo, rankIndex, isUnlocked,
+  repsOf, addRepsTo, setRepsTo, rankIndex, isUnlocked, prereqsOf, skillByKey,
   isFavourite, toggleFavourite, MAX_REPS_PER_ENTRY,
 } = window.MuSkills;
 
@@ -179,10 +179,11 @@ function esc(s) {
 }
 function fam(node) { return FAMILY[node.fam] || { name: node.fam, color: "#8a93a3" }; }
 
-// wrap a skill name onto at most two centred lines
+// wrap a skill name onto at most three centred lines
 function wrapLabel(s) {
   const words = String(s).split(" ");
-  const MAX = 15;
+  const MAX = 16;
+  const MAX_LINES = 3;
   const lines = [];
   let cur = "";
   for (const w of words) {
@@ -190,7 +191,10 @@ function wrapLabel(s) {
     else cur = cur ? cur + " " + w : w;
   }
   if (cur) lines.push(cur);
-  if (lines.length > 2) { lines[1] = lines.slice(1).join(" "); lines.length = 2; }
+  if (lines.length > MAX_LINES) {
+    lines[MAX_LINES - 1] = lines.slice(MAX_LINES - 1).join(" ");
+    lines.length = MAX_LINES;
+  }
   return lines;
 }
 
@@ -247,12 +251,16 @@ function renderCategorySVG(cat) {
   }
 
   // --- edges (primary tree + AND/OR extras) ---
+  // A parent on another branch has no position in this wedge, so the edge
+  // falls back to the START base — the same as a root — and the padlock
+  // popup is what names the skill it's actually waiting on.
   const OFF = CIRCLE_R + 5;
   let edges = "";
   cat.nodes.forEach((n) => {
     const c = pos.get(n.id);
-    const parent = pos.get(n.parent) || pos.get("START");
-    const offFrom = n.parent === "START" ? R_START : OFF;
+    const inWedge = n.parent !== "START" && pos.has(n.parent);
+    const parent = inWedge ? pos.get(n.parent) : pos.get("START");
+    const offFrom = inWedge ? OFF : R_START;
     const l = trimLine(parent, c, offFrom, OFF);
     edges += `<line class="tt-edge" x1="${l.x1.toFixed(1)}" y1="${l.y1.toFixed(1)}" x2="${l.x2.toFixed(1)}" y2="${l.y2.toFixed(1)}" marker-end="url(#tt-arrow)"/>`;
     (n.extra || []).forEach((exId) => {
@@ -265,13 +273,17 @@ function renderCategorySVG(cat) {
   svg += edges;
 
   // --- AND / OR chips (native SVG) ---
+  // The chip labels the way in, so it rides the edge back toward the primary
+  // parent — far enough out to clear the skill's own name and progress bar.
   cat.nodes.forEach((n) => {
     if (!n.connector) return;
     const c = pos.get(n.id);
-    const len = Math.hypot(c.x, c.y) || 1;
-    const ux = -c.x / len, uy = -c.y / len; // toward origin
-    const cx = c.x + ux * (CIRCLE_R + 13);
-    const cy = c.y + uy * (CIRCLE_R + 13);
+    const from = (n.parent !== "START" && pos.get(n.parent)) || pos.get("START");
+    const dx = from.x - c.x, dy = from.y - c.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const out = Math.min(CIRCLE_R + 70, Math.max(CIRCLE_R + 13, len - CIRCLE_R));
+    const cx = c.x + (dx / len) * out;
+    const cy = c.y + (dy / len) * out;
     svg += `<g class="tt-chip"><rect x="${(cx - 17).toFixed(1)}" y="${(cy - 9).toFixed(1)}" width="34" height="18" rx="9"/>` +
       `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" dy="0.32em" text-anchor="middle">${n.connector}</text></g>`;
   });
@@ -449,6 +461,9 @@ function initSkillTree() {
     html += `<span class="tree-legend__item"><span class="tree-legend__lock">${LOCK_SVG}</span>Locked — train the previous skill</span>`;
     if (cat.nodes.some((n) => n.connector))
       html += `<span class="tree-legend__item">AND / OR prerequisite</span>`;
+    // a line that starts on another branch has no visible parent here
+    if (cat.nodes.some((n) => prereqsOf(cat.key, n).some((r) => r.catKey !== cat.key)))
+      html += `<span class="tree-legend__item">Some skills need another branch</span>`;
     legendEl.innerHTML = html;
   }
 
@@ -676,14 +691,29 @@ function initSkillTree() {
       `<span>${starred ? "Your favourite position" : "Make this my favourite"}</span></button>`;
 
     if (!unlocked) {
-      const parent = cat.nodes.find((n) => n.id === node.parent);
-      const pReps = parent ? repsOf(cat.key, parent.id) : 0;
+      // One prerequisite reads as a single sentence; several need to say
+      // whether you're chasing all of them or just the quickest one.
+      const refs = prereqsOf(cat.key, node).map((ref) => {
+        const found = skillByKey(`${ref.catKey}:${ref.id}`);
+        return { ...ref, cat: found.cat, node: found.node, reps: repsOf(ref.catKey, ref.id) };
+      }).filter((ref) => ref.node);
+
+      const lead = !refs.length ? "the previous skill"
+        : refs.length > 1 ? `<b>${node.connector === "AND" ? "all" : "any"}</b> of these`
+        : `<b>${esc(refs[0].node.label)}</b>`;
+
       html += `<div class="pop-locked">` +
         `<div class="pop-lock-ico">${LOCK_SVG}</div>` +
-        `<p>Locked. Reach <b>Novice</b> (${UNLOCK_REPS} reps) on <b>${esc(parent ? parent.label : "the previous skill")}</b> to unlock this skill.</p>` +
-        (parent ? `<div class="pop-bar"><i style="width:${Math.min(100, (pReps / UNLOCK_REPS) * 100).toFixed(1)}%"></i></div>` +
-          `<div class="pop-bar__meta">${esc(parent.label)}: ${pReps} / ${UNLOCK_REPS} reps</div>` : "") +
-        `</div>`;
+        `<p>Locked. Reach <b>Novice</b> (${UNLOCK_REPS} reps) on ${lead} to unlock this skill.</p>`;
+
+      refs.forEach((ref) => {
+        // name the branch too when the prerequisite is on a different wedge
+        const away = ref.cat && ref.cat.key !== cat.key ? ` · ${esc(ref.cat.label)}` : "";
+        html += `<div class="pop-bar"><i style="width:${Math.min(100, (ref.reps / UNLOCK_REPS) * 100).toFixed(1)}%"></i></div>` +
+          `<div class="pop-bar__meta">${esc(ref.node.label)}${away}: ${ref.reps} / ${UNLOCK_REPS} reps</div>`;
+      });
+
+      html += `</div>`;
     } else {
       html += `<div class="pop-rank"><span class="rank-chip rank-${ri}">${RANKS[ri]}</span>` +
         `<span class="pop-reps"><b>${reps}</b> total reps</span></div>`;
