@@ -458,9 +458,13 @@ document.addEventListener("DOMContentLoaded", () => {
     login: modal.querySelector('[data-auth-panel="login"]'),
     sent: modal.querySelector('[data-auth-panel="sent"]'),
   };
-  const tabs = Array.from(modal.querySelectorAll("[data-auth-tab]"));
   const sentBody = document.getElementById("auth-sent-body");
   const authSlot = document.getElementById("auth-slot");
+  const titleEl = document.getElementById("auth-title");
+  const subtitleEl = document.getElementById("auth-subtitle");
+
+  // "Start your tree" is wrong once you already have one
+  const HEADINGS = { signup: "Start your tree", login: "Welcome back" };
 
   let pendingEmail = "";
   let afterAuth = null;   // what to run once the user is signed in
@@ -472,13 +476,16 @@ document.addEventListener("DOMContentLoaded", () => {
     Object.keys(panels).forEach((key) => {
       if (panels[key]) panels[key].hidden = key !== name;
     });
-    tabs.forEach((tab) => {
-      const on = tab.dataset.authTab === name;
-      tab.classList.toggle("is-active", on);
-      tab.setAttribute("aria-selected", on ? "true" : "false");
-    });
-    // the tab strip is meaningless on the "check your email" screen
-    modal.querySelector(".auth-tabs").hidden = name === "sent";
+
+    // the "check your email" screen brings its own icon, title and lead,
+    // so the shared heading would just duplicate it
+    const isSent = name === "sent";
+    if (titleEl) {
+      titleEl.hidden = isSent;
+      if (!isSent) titleEl.textContent = HEADINGS[name] || HEADINGS.signup;
+    }
+    if (subtitleEl) subtitleEl.hidden = isSent;
+
     clearErrors();
   }
 
@@ -538,7 +545,6 @@ document.addEventListener("DOMContentLoaded", () => {
   window.MuAuth.closeModal = closeModal;
 
   modal.querySelectorAll("[data-auth-close]").forEach((el) => el.addEventListener("click", closeModal));
-  tabs.forEach((tab) => tab.addEventListener("click", () => showPanel(tab.dataset.authTab)));
   modal.querySelectorAll("[data-auth-goto]").forEach((el) =>
     el.addEventListener("click", (e) => {
       e.preventDefault();

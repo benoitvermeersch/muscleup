@@ -172,48 +172,13 @@
 .auth-head { text-align: center; margin-bottom: 20px; }
 .auth-head .brand { justify-content: center; margin-bottom: 12px; }
 
-/* stacked lockup: mark above the wordmark, as in the logo artwork */
-.brand--stacked {
-  flex-direction: column;
-  gap: 12px;
-}
+/* the mark alone — the wordmark just repeated what the heading says */
+.brand--stacked { flex-direction: column; }
 .brand--stacked .brand__mark { width: 52px; }
-.brand--stacked .brand__name { font-size: 1.3rem; }
+
 .auth-head h2 { font-size: 1.4rem; }
 .auth-head p { font-size: 0.88rem; color: var(--text-dim); margin-top: 6px; }
-
-/* ---------- tabs ---------- */
-
-.auth-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3px;
-  padding: 3px;
-  margin-bottom: 20px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg-alt);
-}
-.auth-tabs[hidden] { display: none; }
-
-.auth-tab {
-  border: none;
-  background: transparent;
-  color: var(--text-faint);
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 0.86rem;
-  padding: 9px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.auth-tab:hover { color: var(--text); }
-.auth-tab.is-active {
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: inset 0 0 0 1px var(--border);
-}
+.auth-head h2[hidden], .auth-head p[hidden] { display: none; }
 
 /* ---------- form ---------- */
 
