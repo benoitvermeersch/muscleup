@@ -486,6 +486,18 @@ function initSkillTree() {
   }
   function close() { closePopup(); overlay.classList.remove("is-open"); overlay.setAttribute("aria-hidden", "true"); document.body.classList.remove("is-locked"); }
 
+  // Links from the other pages can't open an overlay that lives here, so
+  // they arrive as index.html?tree — open the map and tidy the URL, leaving
+  // a plain reload showing the landing page as normal.
+  (function openFromUrl() {
+    const params = new URLSearchParams(location.search);
+    if (!params.has("tree")) return;
+    params.delete("tree");
+    const query = params.toString();
+    history.replaceState(null, "", location.pathname + (query ? `?${query}` : "") + location.hash);
+    open();
+  })();
+
   // Delegated, because the header nav is rebuilt whenever you sign in or
   // out — a handler bound to today's link would be thrown away with it.
   document.addEventListener("click", (e) => {
@@ -724,10 +736,36 @@ function initSkillTree() {
   document.getElementById("tree-zoom-out").addEventListener("click", () => zoomCenter(1.25));
   document.getElementById("tree-zoom-reset").addEventListener("click", home);
 
+  /* ---- pan by a screen-pixel delta, whatever the current zoom ---- */
+  function panByPixels(dxPix, dyPix) {
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    const inv = ctm.inverse();
+    vb.x += inv.a * dxPix + inv.c * dyPix;
+    vb.y += inv.b * dxPix + inv.d * dyPix;
+    applyViewBox();
+  }
+
+  // Firefox reports scroll in lines or pages rather than pixels
+  function toPixels(delta, mode) {
+    if (mode === 1) return delta * 16;                        // lines
+    if (mode === 2) return delta * (stage.clientHeight || 700); // pages
+    return delta;
+  }
+
+  // Two fingers on a trackpad move the map, the way every other canvas
+  // works — no click needed. Zoom stays on pinch (which browsers deliver as
+  // ctrl + wheel), the +/− buttons and the +/− keys.
   stage.addEventListener("wheel", (e) => {
     e.preventDefault();
-    const u = clientToUser(e.clientX, e.clientY);
-    zoomAround(u.x, u.y, e.deltaY > 0 ? 1.12 : 0.89);
+
+    if (e.ctrlKey || e.metaKey) {
+      const u = clientToUser(e.clientX, e.clientY);
+      zoomAround(u.x, u.y, e.deltaY > 0 ? 1.12 : 0.89);
+      return;
+    }
+
+    panByPixels(toPixels(e.deltaX, e.deltaMode), toPixels(e.deltaY, e.deltaMode));
   }, { passive: false });
 
   /* ---- pan / swipe / tap ---- */

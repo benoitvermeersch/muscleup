@@ -58,6 +58,21 @@ leaderboard. Starring another position moves the star; starring the one
 you've already starred clears it. Locked skills can be favourited too — a
 goal makes a perfectly good favourite.
 
+### Getting to the map
+
+The tree is an overlay on the landing page, so links from the leaderboard
+and the header carry `index.html?tree`, which opens it on arrival and then
+tidies the query string back out of the URL. On the landing page itself the
+click is intercepted and nothing navigates.
+
+### Moving around the map
+
+Two fingers on a trackpad (or a scroll wheel) move the map — no click
+needed — and dragging still works. Zoom is on pinch, which browsers deliver
+as ⌘/Ctrl + scroll, plus the +/− buttons and the +/− keys. The view can't
+travel below the START circle, so at the default zoom there's nothing under
+you to scroll down to.
+
 ### On the skill tree
 
 The map carries a shortened version of the board, collapsed to a tab in

@@ -810,15 +810,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // anchors only exist on the landing page — reach them from anywhere
   const toHome = (hash) => (ON_HOME ? hash : `index.html${hash}`);
 
+  // The map is an overlay on the landing page, so from anywhere else the
+  // link has to load that page and ask it to open — hence ?tree. On the
+  // landing page itself the click is intercepted and nothing navigates.
+  const TREE_HREF = () => (ON_HOME ? "#categories" : "index.html?tree");
+
   const NAV = {
     out: [
       { label: "How It Works", href: () => toHome("#how-it-works") },
+      // signed out the tour still runs through the branches section
       { label: "Skill Tree", href: () => toHome("#categories"), tree: true },
       { label: "AI Coach", href: () => toHome("#ai") },
     ],
     in: [
       { label: "Home", href: () => (ON_HOME ? "#top" : "index.html"), page: "index" },
-      { label: "Skill Tree", href: () => toHome("#categories"), tree: true },
+      { label: "Skill Tree", href: TREE_HREF, tree: true },
       { label: "Leaderboard", href: () => "leaderboard.html", page: "leaderboard" },
       { label: "Profile", href: () => "profile.html", page: "profile" },
     ],
