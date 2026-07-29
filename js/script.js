@@ -486,20 +486,26 @@ function initSkillTree() {
   }
   function close() { closePopup(); overlay.classList.remove("is-open"); overlay.setAttribute("aria-hidden", "true"); document.body.classList.remove("is-locked"); }
 
-  // The tree is open to everyone. Signed out, progress is kept under a
-  // "guest" key on this device; signing in swaps to that account's tree.
-  document.querySelectorAll("[data-open-tree]").forEach((el) =>
-    el.addEventListener("click", (e) => { e.preventDefault(); open(); }));
+  // Delegated, because the header nav is rebuilt whenever you sign in or
+  // out — a handler bound to today's link would be thrown away with it.
+  document.addEventListener("click", (e) => {
+    // The tree is open to everyone. Signed out, progress is kept under a
+    // "guest" key on this device; signing in swaps to that account's tree.
+    if (e.target.closest("[data-open-tree]")) {
+      e.preventDefault();
+      open();
+      return;
+    }
 
-  // The header "Skill Tree" link goes straight to the map once you have an
-  // account. Signed out it keeps its href and just scrolls down to the
-  // branches section, so the page still works without JS.
-  document.querySelectorAll("[data-tree-link]").forEach((el) =>
-    el.addEventListener("click", (e) => {
+    // The header "Skill Tree" link goes straight to the map once you have an
+    // account. Signed out it keeps its href and just scrolls down to the
+    // branches section, so the page still works without JS.
+    if (e.target.closest("[data-tree-link]")) {
       if (!(window.MuAuth && window.MuAuth.currentUser())) return;
       e.preventDefault();
       open();
-    }));
+    }
+  });
 
   // switching account (in either direction) swaps which tree is on screen.
   // MuSkills has already reloaded that account's reps by the time this runs.

@@ -231,23 +231,33 @@
     });
   }
 
+  // Only announce a profile that actually changed. A republish of identical
+  // stats must stay silent, or a listener that re-syncs on change (the
+  // leaderboard does) would drive itself in a loop.
+  function setCached(next) {
+    const before = JSON.stringify(cached === undefined ? null : cached);
+    const after = JSON.stringify(next === undefined ? null : next);
+    cached = next;
+    if (before !== after) emit();
+  }
+
   function mine() { return cached; }
 
   async function load() {
     const id = uid();
-    if (!id) { cached = null; loadedFor = null; emit(); return null; }
+    if (!id) { loadedFor = null; setCached(null); return null; }
 
+    let next;
     if (REMOTE) {
       const rows = await rest(`/profiles?select=${COLUMNS}&id=eq.${encodeURIComponent(id)}`);
-      cached = normalise(rows && rows[0]);
       // no row yet (schema applied after this account signed up) — the first
       // save will upsert one, so treat it as an empty profile for now
-      if (!cached) cached = normalise({ id });
+      next = normalise((rows && rows[0]) || { id });
     } else {
-      cached = localProfile(id);
+      next = localProfile(id);
     }
     loadedFor = id;
-    emit();
+    setCached(next);
     return cached;
   }
 
@@ -297,6 +307,7 @@
     const taken = await checkUsername(username);
     if (taken) throw new Error(taken);
 
+    let saved;
     if (REMOTE) {
       const stats = global.MuSkills.stats();
       const row = {
@@ -319,7 +330,7 @@
         prefer: "resolution=merge-duplicates,return=representation",
         auth: true,
       });
-      cached = normalise(merge(row, rows && rows[0]));
+      saved = normalise(merge(row, rows && rows[0]));
     } else {
       const stored = readJSON(localProfileKey(id), null) || {};
       writeJSON(localProfileKey(id), {
@@ -328,11 +339,11 @@
         last_name: lastName,
         created_at: stored.created_at || new Date().toISOString(),
       });
-      cached = localProfile(id);
+      saved = localProfile(id);
     }
 
     loadedFor = id;
-    emit();
+    setCached(saved);
     return cached;
   }
 
@@ -368,8 +379,7 @@
     // this write carries no name fields, so merge the response over what we
     // already hold rather than replacing it — a stats push must never blank
     // out the username someone is halfway through editing
-    cached = normalise(merge(row, rows && rows[0]));
-    emit();
+    setCached(normalise(merge(row, rows && rows[0])));
     return cached;
   }
 
@@ -426,13 +436,20 @@
 
   if (global.MuSkills) {
     global.MuSkills.onChange((reason) => {
-      if (reason === "reps" || reason === "favourite") schedulePush();
+      if (reason !== "reps" && reason !== "favourite") return;
+      if (REMOTE) { schedulePush(); return; }
+
+      // Local mode publishes nothing, but anything watching the profile —
+      // the standings panel, the leaderboard — still needs to hear that the
+      // numbers moved.
+      const id = uid();
+      if (id) setCached(localProfile(id));
     });
   }
 
   if (global.MuAuth) {
     global.MuAuth.onChange((user) => {
-      if (!user) { cached = null; loadedFor = null; emit(); return; }
+      if (!user) { loadedFor = null; setCached(null); return; }
       if (loadedFor === user.id) return;
       load()
         // whatever this device has logged is the truth for this account

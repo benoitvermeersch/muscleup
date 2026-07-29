@@ -7,8 +7,8 @@
 <meta name="description" content="A skill tree to help you unlock calisthenics, isometrics and strengthen your body, with AI guidance along the way.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#0a0d12">
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/style.css?v=2">
+<link rel="stylesheet" href="css/auth.css?v=2">
 </head>
 <body>
 
@@ -22,12 +22,7 @@
       <img class="brand__mark" src="assets/logo.svg" alt="" width="400" height="404">
       <span class="brand__name">Muscle<em>Up</em></span>
     </a>
-    <nav class="nav__links" aria-label="Primary">
-      <a href="#how-it-works">How it works</a>
-      <a href="#categories" data-tree-link>Skill Tree</a>
-      <a href="#ai">AI Coach</a>
-      <a href="leaderboard.html">Leaderboard</a>
-    </nav>
+    <nav class="nav__links" id="nav-links" aria-label="Primary"></nav>
     <div class="nav__tools">
       <div id="auth-slot"></div>
     </div>
@@ -307,6 +302,24 @@
   <div class="tree-stage" id="tree-stage">
     <svg id="tree-svg" xmlns="http://www.w3.org/2000/svg"></svg>
     <div class="tree-hint">Tap a skill to log reps · drag to pan · scroll to zoom · ‹ › or swipe to switch branch</div>
+
+    <!-- collapsible standings, docked to the side of the map -->
+    <aside class="tree-board" id="tree-board" aria-label="Leaderboard">
+      <button type="button" class="tree-board__toggle" id="tree-board-toggle"
+              aria-expanded="false" aria-controls="tree-board-panel">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+          <path d="M4 14h4v7H4zM10 8h4v13h-4zM16 11h4v10h-4z"/>
+        </svg>
+        <span class="tree-board__label">Leaderboard</span>
+        <span class="tree-board__chev" aria-hidden="true">▸</span>
+      </button>
+
+      <div class="tree-board__panel" id="tree-board-panel" hidden>
+        <p class="tree-board__status" id="tree-board-status" role="status"></p>
+        <ol class="tree-board__list" id="tree-board-list"></ol>
+        <a class="tree-board__all" href="leaderboard.html">Full leaderboard →</a>
+      </div>
+    </aside>
   </div>
 
   <!-- per-skill popup -->
@@ -348,10 +361,11 @@
   </div>
 </div>
 
-<script src="js/auth-config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/skills.js"></script>
-<script src="js/profiles.js"></script>
-<script src="js/script.js"></script>
+<script src="js/auth-config.js?v=2"></script>
+<script src="js/auth.js?v=2"></script>
+<script src="js/skills.js?v=2"></script>
+<script src="js/profiles.js?v=2"></script>
+<script src="js/script.js?v=2"></script>
+<script src="js/tree-board.js?v=2"></script>
 </body>
 </html>

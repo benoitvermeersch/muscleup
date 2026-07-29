@@ -795,6 +795,46 @@ document.addEventListener("DOMContentLoaded", () => {
     if (fn) fn();
   }
 
+  /* ---- header navigation ----
+
+     One nav for the whole site, built from the signed-in state rather than
+     written into each page, so the links don't shuffle as you move around.
+     Signed out you get the landing-page tour; signed in you get the app.  */
+
+  const navEl = document.getElementById("nav-links");
+
+  // "" and "index.html" are the same page
+  const PAGE = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
+  const ON_HOME = PAGE === "index";
+
+  // anchors only exist on the landing page — reach them from anywhere
+  const toHome = (hash) => (ON_HOME ? hash : `index.html${hash}`);
+
+  const NAV = {
+    out: [
+      { label: "How It Works", href: () => toHome("#how-it-works") },
+      { label: "Skill Tree", href: () => toHome("#categories"), tree: true },
+      { label: "AI Coach", href: () => toHome("#ai") },
+    ],
+    in: [
+      { label: "Home", href: () => (ON_HOME ? "#top" : "index.html"), page: "index" },
+      { label: "Skill Tree", href: () => toHome("#categories"), tree: true },
+      { label: "Leaderboard", href: () => "leaderboard.html", page: "leaderboard" },
+      { label: "Profile", href: () => "profile.html", page: "profile" },
+    ],
+  };
+
+  function renderNav(user) {
+    if (!navEl) return;
+    navEl.innerHTML = (user ? NAV.in : NAV.out)
+      .map((item) => {
+        const active = item.page && item.page === PAGE;
+        return `<a href="${item.href()}"${item.tree ? " data-tree-link" : ""}` +
+          `${active ? ' class="is-active" aria-current="page"' : ""}>${escapeHtml(item.label)}</a>`;
+      })
+      .join("");
+  }
+
   /* ---- header account chip ---- */
 
   // Once a profile exists the chip shows the username rather than the email
@@ -831,7 +871,8 @@ document.addEventListener("DOMContentLoaded", () => {
     openModal(trigger.dataset.authOpen);
   });
 
-  window.MuAuth.onChange(renderAuthSlot);
+  window.MuAuth.onChange((user) => { renderNav(user); renderAuthSlot(user); });
+  renderNav(window.MuAuth.currentUser());
   renderAuthSlot(window.MuAuth.currentUser());
 
   // the chip shows the username, so redraw it once the profile has loaded

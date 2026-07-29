@@ -58,6 +58,13 @@ leaderboard. Starring another position moves the star; starring the one
 you've already starred clears it. Locked skills can be favourited too — a
 goal makes a perfectly good favourite.
 
+### On the skill tree
+
+The map carries a shortened version of the board, collapsed to a tab in
+the top-right corner and expandable over the tree: the top five athletes
+plus your own line if you're below them. It hides on narrow screens,
+where the map needs every pixel it can get.
+
 ### Where the numbers come from
 
 Reps live in the browser's local storage, which nobody else can read, so
@@ -144,13 +151,22 @@ don't treat a local-mode account as protecting anything.
 ├── js/profiles.js        # profile storage + the leaderboard feed
 ├── js/script.js          # skill tree wheel + progression
 ├── js/leaderboard.js     # the rankings table
+├── js/tree-board.js      # the standings panel on the map
 ├── js/profile-page.js    # the profile form
 └── supabase/schema.sql   # profiles table, RLS and the signup trigger
 ```
 
-The sign up / log in dialog is built by `js/auth.js` rather than written
-into each page, so a page becomes sign-in-able just by loading that script
-and putting an `#auth-slot` in its header.
+The sign up / log in dialog **and the header navigation** are built by
+`js/auth.js` rather than written into each page, so a page picks both up
+just by loading that script and putting an `#auth-slot` and an empty
+`#nav-links` in its header. That's also what keeps the nav identical
+everywhere: signed out it's How It Works / Skill Tree / AI Coach, and
+signed in it's Home / Skill Tree / Leaderboard / Profile — the links don't
+shuffle as you move between pages.
+
+Assets are referenced with a `?v=` query string. **Bump it whenever you
+change a CSS or JS file**, otherwise browsers keep serving the copy they
+already have and you get a half-updated site.
 
 ## Look and feel
 

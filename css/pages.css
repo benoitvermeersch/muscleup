@@ -55,7 +55,7 @@
 
 .lb-summary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 14px;
   margin-bottom: 26px;
 }
@@ -102,6 +102,7 @@
   color: var(--text-dim);
 }
 .lb-status.is-error { color: #ff8b80; }
+.lb-status.is-warn { color: #ffd24e; }
 
 .lb-scroll { overflow-x: auto; }
 
@@ -247,6 +248,19 @@
 }
 .pf-error.is-visible { display: block; }
 
+/* shown until a profile has actually been saved */
+.pf-state {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.pf-state[hidden] { display: none; }
+
 .pf-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
 .pf-field label,
 .pf-label {
@@ -362,7 +376,6 @@
 /* ---------- responsive ---------- */
 
 @media (max-width: 900px) {
-  .lb-summary { grid-template-columns: repeat(2, 1fr); }
   .pf-grid { grid-template-columns: 1fr; }
   .pf-preview { order: -1; }
 }

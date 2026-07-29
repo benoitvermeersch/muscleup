@@ -698,7 +698,9 @@ ul { margin: 0; padding: 0; list-style: none; }
   touch-action: none;
 }
 .tree-stage.is-panning { cursor: grabbing; }
-.tree-stage svg { width: 100%; height: 100%; display: block; user-select: none; }
+/* the map itself — not every svg on the stage (the standings panel has
+   its own icon, which must keep its own size) */
+.tree-stage > svg { width: 100%; height: 100%; display: block; user-select: none; }
 
 /* skill node — native SVG (plain category-coloured circle + icon + name) */
 .skill-node { cursor: pointer; --fam: #8a93a3; }
@@ -1050,4 +1052,139 @@ ul { margin: 0; padding: 0; list-style: none; }
   .tree-switch__name { font-size: 1.05rem; }
   .tree-legend { display: none; }
   .tree-footer { justify-content: center; }
+}
+
+/* =================================================
+   Standings panel docked to the skill tree
+   ================================================= */
+
+.tree-board {
+  position: absolute;
+  user-select: none;
+  top: 16px;
+  right: 16px;
+  z-index: 5;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  max-height: calc(100% - 32px);
+}
+
+.tree-board__toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--tt-panel);
+  backdrop-filter: blur(10px);
+  color: var(--text-dim);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.tree-board__toggle:hover { border-color: var(--lime-dim); color: var(--text); }
+.tree-board__toggle svg { fill: currentColor; flex: none; }
+.tree-board__label { flex: 1; text-align: left; }
+.tree-board__chev { font-size: 0.7rem; transition: transform 0.18s ease; }
+.tree-board.is-open .tree-board__toggle { color: var(--text); }
+.tree-board.is-open .tree-board__chev { transform: rotate(90deg); }
+
+.tree-board__panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--tt-panel);
+  backdrop-filter: blur(10px);
+}
+.tree-board__panel[hidden] { display: none; }
+
+.tree-board__status {
+  margin: 0 0 8px;
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.tree-board__status[hidden] { display: none; }
+.tree-board__status.is-error { color: #ff8b80; }
+
+.tree-board__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.tree-board__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 6px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+.tree-board__row.is-me {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+}
+
+.tree-board__rank {
+  flex: none;
+  width: 17px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.74rem;
+  color: var(--text-faint);
+}
+.tree-board__row.is-me .tree-board__rank { color: var(--text); }
+
+.tree-board__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+.tree-board__row.is-me .tree-board__name { color: var(--text); font-weight: 600; }
+
+.tree-board__reps {
+  flex: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
+.tree-board__gap {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  letter-spacing: 0.2em;
+  padding: 2px 0;
+}
+
+.tree-board__all {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  text-align: center;
+}
+.tree-board__all:hover { color: var(--text); }
+
+/* the map gets cramped on a phone — the full board is a tap away */
+@media (max-width: 720px) {
+  .tree-board { display: none; }
 }

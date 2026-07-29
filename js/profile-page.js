@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const firstEl = document.getElementById("pf-first");
   const lastEl = document.getElementById("pf-last");
   const errorEl = document.getElementById("pf-error");
+  const stateEl = document.getElementById("pf-state");
   const noteEl = document.getElementById("pf-note");
   const emailEl = document.getElementById("pf-email");
   const previewName = document.getElementById("pf-preview-name");
@@ -65,6 +66,22 @@ document.addEventListener("DOMContentLoaded", () => {
         `<small>favourite position</small></div>`;
   }
 
+  /* ---- have you actually saved anything? ---- */
+
+  // An empty form with example placeholders reads as a filled-in one, and
+  // then the leaderboard "loses" a name that was never saved. Say so plainly.
+  function renderState(profile) {
+    if (!stateEl) return;
+    const saved = profile && profile.username;
+    stateEl.hidden = Boolean(saved);
+    if (!saved) {
+      const shown = window.MuProfiles.displayName(profile || { id: (window.MuAuth.currentUser() || {}).id });
+      stateEl.textContent =
+        `You haven't saved a profile yet — the leaderboard shows you as “${shown}” until you do. ` +
+        `The greyed-out text below is example text, not your details.`;
+    }
+  }
+
   /* ---- fill the form from the stored profile ---- */
   function fill(profile) {
     const user = window.MuAuth.currentUser();
@@ -72,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
     content.hidden = !user;
     if (!user) return;
 
+    renderState(profile);
     if (emailEl) emailEl.textContent = user.email;
     if (profile) {
       // don't clobber something half-typed with a background refresh

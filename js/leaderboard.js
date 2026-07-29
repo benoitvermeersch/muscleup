@@ -78,11 +78,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderSummary(profiles, meId) {
     const meIndex = profiles.findIndex((p) => p.id === meId);
     const me = meIndex > -1 ? profiles[meIndex] : null;
-    const trained = profiles.filter((p) => p.totalReps > 0).length;
 
+    // the athlete count lives next to "Rankings" — no need to say it twice
     const cards = [
-      { label: "Athletes registered", value: nf.format(profiles.length) },
-      { label: "Have logged reps", value: nf.format(trained) },
       {
         label: "Your rank",
         value: me && me.totalReps > 0 ? `#${meIndex + 1}` : "—",
@@ -106,23 +104,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ---- load + draw ---- */
   let loading = false;
+  let queued = false;
 
   async function render() {
     const user = window.MuAuth.currentUser();
     gate.hidden = Boolean(user);
     content.hidden = !user;
-    if (!user || loading) return;
+    if (!user) return;
+
+    // a redraw asked for mid-flight runs once this one finishes, rather than
+    // being dropped — otherwise the board can settle on stale numbers
+    if (loading) { queued = true; return; }
 
     loading = true;
     setStatus("Loading the leaderboard…");
     try {
+      // Reps live in this browser, so my row is only as fresh as the last
+      // push. Publish before reading rather than trusting the debounced
+      // background sync to have landed — that's what leaves your own line
+      // showing zeroes right after a session in the tree.
+      let syncError = null;
+      try {
+        await window.MuProfiles.pushStats();
+      } catch (err) {
+        syncError = err;
+      }
+
       const profiles = await window.MuProfiles.list();
       renderSummary(profiles, user.id);
       bodyEl.innerHTML = profiles.map((p, i) => row(p, i, user.id)).join("");
       countEl.textContent = profiles.length === 1
         ? "1 athlete"
         : `${nf.format(profiles.length)} athletes`;
-      setStatus(profiles.length ? "" : "No athletes registered yet.");
+
+      if (syncError) {
+        setStatus(`Your own reps may be out of date — ${syncError.message}`, "warn");
+      } else {
+        setStatus(profiles.length ? "" : "No athletes registered yet.");
+      }
     } catch (err) {
       bodyEl.innerHTML = "";
       summaryEl.innerHTML = "";
@@ -130,11 +149,12 @@ document.addEventListener("DOMContentLoaded", () => {
       setStatus(err.message, "error");
     } finally {
       loading = false;
+      if (queued) { queued = false; render(); }
     }
   }
 
   window.MuAuth.onChange(() => render());
   // my own row goes stale the moment I log reps in the tree
-  window.MuProfiles.onChange(() => { if (!loading) render(); });
+  window.MuProfiles.onChange(() => render());
   render();
 });
