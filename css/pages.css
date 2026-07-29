@@ -508,6 +508,18 @@
   line-height: 1.65;
 }
 
+/* the origin story leads the card, so it can't be skimmed past */
+.contact__lede {
+  margin-top: 20px !important;
+  padding-left: 16px;
+  border-left: 2px solid var(--lime-dim);
+  font-size: 1.06rem !important;
+  line-height: 1.6 !important;
+  color: var(--text) !important;
+}
+
+.contact__card em { color: var(--text); font-style: normal; font-weight: 600; }
+
 .contact__who {
   display: flex;
   align-items: center;
