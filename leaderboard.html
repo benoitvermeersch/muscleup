@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leaderboard · MuscleUp</title>
+<meta name="description" content="Every MuscleUp athlete, ranked by total reps — with their strongest branch and favourite position.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0a0d12">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-glow bg-glow--push" aria-hidden="true"></div>
+<div class="bg-glow bg-glow--pull" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="index.html">
+      <img class="brand__mark" src="assets/logo.svg" alt="" width="400" height="404">
+      <span class="brand__name">Muscle<em>Up</em></span>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="index.html#categories">Skill Tree</a>
+      <a href="leaderboard.html" class="is-active" aria-current="page">Leaderboard</a>
+      <a href="profile.html">Profile</a>
+    </nav>
+    <div class="nav__tools">
+      <div id="auth-slot"></div>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="container">
+
+    <div class="page__head">
+      <span class="eyebrow"><span class="eyebrow__dot"></span> Leaderboard</span>
+      <h1 class="page__title">Every athlete on the tree.</h1>
+      <p class="page__lead">Everyone who's ever registered, ranked by the reps they've logged — plus the branch they train hardest and the position they've starred.</p>
+    </div>
+
+    <!-- signed out -->
+    <div class="gate" id="lb-gate" hidden>
+      <div class="gate__icon" aria-hidden="true">🔒</div>
+      <h2>Log in to see the leaderboard</h2>
+      <p>The rankings are for athletes with an account. Sign in and you'll appear on the board too.</p>
+      <div class="gate__actions">
+        <button type="button" class="btn btn--primary" data-auth-open="login">Log in</button>
+        <button type="button" class="btn btn--ghost" data-auth-open="signup">Create an account</button>
+      </div>
+    </div>
+
+    <!-- signed in -->
+    <div id="lb-content" hidden>
+      <div class="lb-summary" id="lb-summary"></div>
+
+      <div class="lb-card">
+        <div class="lb-card__head">
+          <h2>Rankings</h2>
+          <span class="lb-card__count" id="lb-count"></span>
+        </div>
+
+        <p class="lb-status" id="lb-status" role="status" aria-live="polite" hidden></p>
+
+        <div class="lb-scroll">
+          <table class="lb-table">
+            <thead>
+              <tr>
+                <th scope="col" class="lb-rank">#</th>
+                <th scope="col">Athlete</th>
+                <th scope="col">Total reps</th>
+                <th scope="col">Top branch</th>
+                <th scope="col">Favourite position</th>
+              </tr>
+            </thead>
+            <tbody id="lb-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <p class="page__foot-note">Star a position from any skill in the tree to claim a favourite, and log reps to climb.
+        <a href="index.html#categories">Open the skill tree →</a></p>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer__inner">
+    <div class="brand">
+      <img class="brand__mark" src="assets/logo.svg" alt="" width="400" height="404">
+      <span class="brand__name">Muscle<em>Up</em></span>
+    </div>
+    <p>&copy; 2026 MuscleUp. Level up your body.</p>
+  </div>
+</footer>
+
+<script src="js/auth-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/skills.js"></script>
+<script src="js/profiles.js"></script>
+<script src="js/leaderboard.js"></script>
+</body>
+</html>

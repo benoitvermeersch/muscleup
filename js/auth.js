@@ -137,6 +137,33 @@
     return session ? session.user : null;
   }
 
+  function accessToken() {
+    return session ? session.token || null : null;
+  }
+
+  // Supabase access tokens last an hour. Anything writing to the database
+  // calls this once on a 401 rather than dumping the user back at the login
+  // form mid-session.
+  async function refreshSession() {
+    if (!REMOTE || !session || !session.refreshToken) return null;
+    try {
+      const data = await sbFetch("/auth/v1/token?grant_type=refresh_token", {
+        body: { refresh_token: session.refreshToken },
+      });
+      if (!data || !data.access_token) return null;
+      setSession({
+        user: data.user ? userFromSupabase(data.user) : session.user,
+        token: data.access_token,
+        refreshToken: data.refresh_token || session.refreshToken,
+      });
+      return data.access_token;
+    } catch (err) {
+      // refresh token spent or revoked — the session is genuinely over
+      setSession(null);
+      return null;
+    }
+  }
+
   /* ------------------------------------------------------------------
      Local users table
      ------------------------------------------------------------------ */
@@ -417,6 +444,8 @@
     logOut,
     resend,
     currentUser,
+    accessToken,
+    refreshSession,
     validateEmail,
     validatePassword,
     onChange(fn) {
@@ -447,9 +476,83 @@
 
 /* =====================================================================
    Auth UI — the sign up / log in dialog and the header account chip
+
+   The dialog markup lives here rather than in the pages, so the landing
+   page, the leaderboard and the profile page all share one copy of it —
+   a page only needs an #auth-slot in its header to become sign-in-able.
    ===================================================================== */
 
+const AUTH_MARKUP = `
+<div class="auth-banner" id="auth-banner" role="status" aria-live="polite"></div>
+
+<div class="auth-modal" id="auth-modal" hidden>
+  <div class="auth-modal__backdrop" data-auth-close></div>
+  <div class="auth-modal__card" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <button class="auth-modal__close" data-auth-close aria-label="Close">✕</button>
+
+    <div class="auth-head">
+      <div class="brand brand--stacked">
+        <img class="brand__mark" src="assets/logo.svg" alt="MuscleUp" width="400" height="404">
+      </div>
+      <h2 id="auth-title">Start your tree</h2>
+      <p id="auth-subtitle">One account, every branch, progress that sticks.</p>
+    </div>
+
+    <!-- SIGN UP -->
+    <form class="auth-form" data-auth-panel="signup" novalidate>
+      <div class="auth-error" role="alert"></div>
+
+      <div class="auth-field">
+        <label for="signup-email">Email address</label>
+        <input type="email" id="signup-email" name="email" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+
+      <div class="auth-field">
+        <label for="signup-password">Password</label>
+        <input type="password" id="signup-password" name="password" placeholder="More than 8 characters" autocomplete="new-password" required>
+        <span class="auth-hint" id="auth-pw-hint">Must be more than 8 characters</span>
+      </div>
+
+      <button type="submit" class="btn btn--primary">Create account</button>
+
+      <p class="auth-swap">Already have an account?
+        <button type="button" data-auth-goto="login">Log in</button>
+      </p>
+    </form>
+
+    <!-- LOG IN -->
+    <form class="auth-form" data-auth-panel="login" novalidate hidden>
+      <div class="auth-error" role="alert"></div>
+
+      <div class="auth-field">
+        <label for="login-email">Email address</label>
+        <input type="email" id="login-email" name="email" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+
+      <div class="auth-field">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" name="password" placeholder="Your password" autocomplete="current-password" required>
+      </div>
+
+      <button type="submit" class="btn btn--primary">Log in</button>
+
+      <p class="auth-swap">New here?
+        <button type="button" data-auth-goto="signup">Create an account</button>
+      </p>
+    </form>
+
+    <!-- CHECK YOUR EMAIL -->
+    <div class="auth-panel" data-auth-panel="sent" id="auth-sent-body" hidden></div>
+  </div>
+</div>`;
+
 document.addEventListener("DOMContentLoaded", () => {
+  if (!document.getElementById("auth-modal")) {
+    const holder = document.createElement("div");
+    holder.innerHTML = AUTH_MARKUP;
+    while (holder.firstElementChild) document.body.appendChild(holder.firstElementChild);
+  }
+
   const modal = document.getElementById("auth-modal");
   if (!modal) return;
 
@@ -534,8 +637,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function closeModal() {
     modal.classList.remove("is-open");
     document.body.classList.remove("is-locked");
-    // the skill tree overlay locks the body too — don't unlock it out from under
-    if (document.getElementById("tree-overlay").classList.contains("is-open")) {
+    // the skill tree overlay locks the body too — don't unlock it out from
+    // under it (pages other than the landing page have no overlay at all)
+    const tree = document.getElementById("tree-overlay");
+    if (tree && tree.classList.contains("is-open")) {
       document.body.classList.add("is-locked");
     }
     setTimeout(() => { modal.hidden = true; }, 180);
@@ -691,13 +796,24 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ---- header account chip ---- */
+
+  // Once a profile exists the chip shows the username rather than the email
+  // — the name other athletes see on the leaderboard.
+  function chipName(user) {
+    const profile = window.MuProfiles && window.MuProfiles.mine();
+    if (profile && profile.username) return profile.username;
+    return user.email;
+  }
+
   function renderAuthSlot(user) {
     if (!authSlot) return;
     if (user) {
+      const name = chipName(user);
       authSlot.innerHTML =
         `<div class="account">` +
-        `<span class="account__avatar">${escapeHtml(user.email.slice(0, 1).toUpperCase())}</span>` +
-        `<span class="account__email">${escapeHtml(user.email)}</span>` +
+        `<a class="account__me" href="profile.html" title="Edit your profile">` +
+        `<span class="account__avatar">${escapeHtml(name.slice(0, 1).toUpperCase())}</span>` +
+        `<span class="account__email">${escapeHtml(name)}</span></a>` +
         `<button type="button" class="account__out" id="auth-logout">Log out</button>` +
         `</div>`;
       document.getElementById("auth-logout").addEventListener("click", () => window.MuAuth.logOut());
@@ -717,6 +833,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.MuAuth.onChange(renderAuthSlot);
   renderAuthSlot(window.MuAuth.currentUser());
+
+  // the chip shows the username, so redraw it once the profile has loaded
+  if (window.MuProfiles) {
+    window.MuProfiles.onChange(() => renderAuthSlot(window.MuAuth.currentUser()));
+  }
 
   /* ---- handle a confirmation link landing on the page ---- */
   (async function handleReturn() {

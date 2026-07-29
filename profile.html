@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your profile · MuscleUp</title>
+<meta name="description" content="Set the username and name other MuscleUp athletes see on the leaderboard.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0a0d12">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-glow bg-glow--push" aria-hidden="true"></div>
+<div class="bg-glow bg-glow--pull" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="index.html">
+      <img class="brand__mark" src="assets/logo.svg" alt="" width="400" height="404">
+      <span class="brand__name">Muscle<em>Up</em></span>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="index.html#categories">Skill Tree</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="profile.html" class="is-active" aria-current="page">Profile</a>
+    </nav>
+    <div class="nav__tools">
+      <div id="auth-slot"></div>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="container">
+
+    <div class="page__head">
+      <span class="eyebrow"><span class="eyebrow__dot"></span> Your profile</span>
+      <h1 class="page__title">Put a name to the reps.</h1>
+      <p class="page__lead">Signing up only took an email. This is where you pick the username other athletes see next to your rank.</p>
+    </div>
+
+    <!-- signed out -->
+    <div class="gate" id="pf-gate" hidden>
+      <div class="gate__icon" aria-hidden="true">🔒</div>
+      <h2>Log in to edit your profile</h2>
+      <p>Your profile belongs to your account, so you'll need to be signed in to change it.</p>
+      <div class="gate__actions">
+        <button type="button" class="btn btn--primary" data-auth-open="login">Log in</button>
+        <button type="button" class="btn btn--ghost" data-auth-open="signup">Create an account</button>
+      </div>
+    </div>
+
+    <!-- signed in -->
+    <div class="pf-grid" id="pf-content" hidden>
+
+      <form class="pf-form" id="pf-form" novalidate>
+        <div class="pf-error" id="pf-error" role="alert"></div>
+
+        <div class="pf-field">
+          <label for="pf-username">Username</label>
+          <input type="text" id="pf-username" name="username" placeholder="ironcross_ben"
+                 autocomplete="username" maxlength="20" spellcheck="false" required>
+          <span class="pf-hint">3–20 characters. Letters, numbers and underscores. This is your name on the leaderboard.</span>
+        </div>
+
+        <div class="pf-row">
+          <div class="pf-field">
+            <label for="pf-first">First name</label>
+            <input type="text" id="pf-first" name="firstName" placeholder="Benoit"
+                   autocomplete="given-name" maxlength="40" required>
+          </div>
+          <div class="pf-field">
+            <label for="pf-last">Last name</label>
+            <input type="text" id="pf-last" name="lastName" placeholder="Vermeersch"
+                   autocomplete="family-name" maxlength="40" required>
+          </div>
+        </div>
+
+        <div class="pf-field pf-field--static">
+          <span class="pf-label">Account email</span>
+          <span class="pf-static" id="pf-email">—</span>
+          <span class="pf-hint">Only you see this — it never appears on the leaderboard.</span>
+        </div>
+
+        <div class="pf-actions">
+          <button type="submit" class="btn btn--primary">Save profile</button>
+          <a class="btn btn--ghost" href="leaderboard.html">View leaderboard</a>
+        </div>
+
+        <p class="pf-note" id="pf-note" role="status" aria-live="polite"></p>
+      </form>
+
+      <aside class="pf-preview" aria-label="Leaderboard preview">
+        <span class="pf-preview__tag">How you'll appear</span>
+        <div class="pf-preview__card">
+          <span class="pf-preview__avatar" id="pf-preview-avatar" aria-hidden="true">?</span>
+          <span class="pf-preview__name" id="pf-preview-name">Athlete</span>
+          <span class="pf-preview__full is-placeholder" id="pf-preview-full">Your name, once you fill it in</span>
+        </div>
+        <div class="pf-preview__stats" id="pf-preview-stats"></div>
+        <p class="pf-preview__note">Reps and your favourite position come from the skill tree — star any position there to set it.</p>
+      </aside>
+
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer__inner">
+    <div class="brand">
+      <img class="brand__mark" src="assets/logo.svg" alt="" width="400" height="404">
+      <span class="brand__name">Muscle<em>Up</em></span>
+    </div>
+    <p>&copy; 2026 MuscleUp. Level up your body.</p>
+  </div>
+</footer>
+
+<script src="js/auth-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/skills.js"></script>
+<script src="js/profiles.js"></script>
+<script src="js/profile-page.js"></script>
+</body>
+</html>

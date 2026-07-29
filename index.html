@@ -26,6 +26,7 @@
       <a href="#how-it-works">How it works</a>
       <a href="#categories" data-tree-link>Skill Tree</a>
       <a href="#ai">AI Coach</a>
+      <a href="leaderboard.html">Leaderboard</a>
     </nav>
     <div class="nav__tools">
       <div id="auth-slot"></div>
@@ -327,70 +328,6 @@
   </div>
 </div>
 
-<!-- AUTH DIALOG -->
-<div class="auth-banner" id="auth-banner" role="status" aria-live="polite"></div>
-
-<div class="auth-modal" id="auth-modal" hidden>
-  <div class="auth-modal__backdrop" data-auth-close></div>
-  <div class="auth-modal__card" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-    <button class="auth-modal__close" data-auth-close aria-label="Close">✕</button>
-
-    <div class="auth-head">
-      <div class="brand brand--stacked">
-        <img class="brand__mark" src="assets/logo.svg" alt="MuscleUp" width="400" height="404">
-      </div>
-      <h2 id="auth-title">Start your tree</h2>
-      <p id="auth-subtitle">One account, every branch, progress that sticks.</p>
-    </div>
-
-    <!-- SIGN UP -->
-    <form class="auth-form" data-auth-panel="signup" novalidate>
-      <div class="auth-error" role="alert"></div>
-
-      <div class="auth-field">
-        <label for="signup-email">Email address</label>
-        <input type="email" id="signup-email" name="email" placeholder="you@example.com" autocomplete="email" required>
-      </div>
-
-      <div class="auth-field">
-        <label for="signup-password">Password</label>
-        <input type="password" id="signup-password" name="password" placeholder="More than 8 characters" autocomplete="new-password" required>
-        <span class="auth-hint" id="auth-pw-hint">Must be more than 8 characters</span>
-      </div>
-
-      <button type="submit" class="btn btn--primary">Create account</button>
-
-      <p class="auth-swap">Already have an account?
-        <button type="button" data-auth-goto="login">Log in</button>
-      </p>
-    </form>
-
-    <!-- LOG IN -->
-    <form class="auth-form" data-auth-panel="login" novalidate hidden>
-      <div class="auth-error" role="alert"></div>
-
-      <div class="auth-field">
-        <label for="login-email">Email address</label>
-        <input type="email" id="login-email" name="email" placeholder="you@example.com" autocomplete="email" required>
-      </div>
-
-      <div class="auth-field">
-        <label for="login-password">Password</label>
-        <input type="password" id="login-password" name="password" placeholder="Your password" autocomplete="current-password" required>
-      </div>
-
-      <button type="submit" class="btn btn--primary">Log in</button>
-
-      <p class="auth-swap">New here?
-        <button type="button" data-auth-goto="signup">Create an account</button>
-      </p>
-    </form>
-
-    <!-- CHECK YOUR EMAIL -->
-    <div class="auth-panel" data-auth-panel="sent" id="auth-sent-body" hidden></div>
-  </div>
-</div>
-
 <!-- FIRST-RUN ASSESSMENT -->
 <div class="assess" id="assess" hidden>
   <div class="assess__backdrop"></div>
@@ -413,6 +350,8 @@
 
 <script src="js/auth-config.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/skills.js"></script>
+<script src="js/profiles.js"></script>
 <script src="js/script.js"></script>
 </body>
 </html>

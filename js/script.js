@@ -54,215 +54,14 @@ function initWaitlist() {
 }
 
 /* ---------------------------------------------------------------------
-   Skill Tree data
+   Skill data, rep counters and favourites all live in js/skills.js, so the
+   leaderboard and the profile page read the same numbers this map draws.
    --------------------------------------------------------------------- */
-
-// Colour + simple icon per movement family (shared across categories where the key repeats)
-const FAMILY = {
-  push:        { name: "Push-Ups",        color: "#e8873a", icon: "💪" },
-  dip:         { name: "Dips",            color: "#d9a521", icon: "🔻" },
-  planche:     { name: "Planche",         color: "#d6443c", icon: "🤸" },
-  ring:        { name: "Rings / Cross",   color: "#20a89f", icon: "⭕" },
-  ringPlanche: { name: "Ring Planche",    color: "#3d86d6", icon: "🌀" },
-  ringMaltese: { name: "Ring Maltese",    color: "#8a5cd0", icon: "✳️" },
-  handstand:   { name: "Handstand",       color: "#3fae6b", icon: "🙃" },
-
-  pull:        { name: "Pull-Ups",        color: "#3d86d6", icon: "🧗" },
-  frontLever:  { name: "Front Lever",     color: "#3fae6b", icon: "🦅" },
-  victorian:   { name: "Victorian",       color: "#8a5cd0", icon: "👑" },
-  backLever:   { name: "Back Lever",      color: "#20a89f", icon: "🔄" },
-  hefesto:     { name: "Hefesto",         color: "#e8873a", icon: "🔥" },
-
-  squat:       { name: "Squat",           color: "#3d86d6", icon: "🦵" },
-  sissy:       { name: "Sissy Squat",     color: "#20a89f", icon: "🦿" },
-  shrimp:      { name: "Shrimp Squat",    color: "#3fae6b", icon: "🦐" },
-  legext:      { name: "Leg Ext / Press", color: "#e8873a", icon: "🏋️" },
-  hamstring:   { name: "Hamstring",       color: "#d6443c", icon: "🌉" },
-
-  sit:         { name: "L-Sit Line",      color: "#2493b0", icon: "🪑" },
-  dragon:      { name: "Dragon Flag",     color: "#8a5cd0", icon: "🐉" },
-  reverse:     { name: "Reverse Planche", color: "#d152a3", icon: "🔃" },
-
-  cardio:      { name: "Cardio",          color: "#20a89f", icon: "🏃" },
-};
-
-const CATEGORIES = [
-  {
-    key: "push", label: "Push", icon: "💪", color: "#ff6b5e", complete: false,
-    nodes: [
-      // main pushing line
-      { id: "pushup",    label: "Push-Up",                 parent: "START",    fam: "push" },
-      { id: "ringpush",  label: "Ring Push-Up",            parent: "pushup",   fam: "push" },
-      { id: "ringflies", label: "Ring Flies",              parent: "ringpush", fam: "push" },
-      { id: "sarflies",  label: "Straight-Arm Ring Flies", parent: "ringflies",fam: "push" },
-      { id: "oapush",    label: "One-Arm Push-Up",         parent: "pushup",   fam: "push", legendary: true },
-
-      // dips
-      { id: "dip",     label: "Dip",             parent: "START",  fam: "dip" },
-      { id: "oadip",   label: "One-Arm Dip",     parent: "dip",    fam: "dip", legendary: true },
-      { id: "impdip",  label: "Impossible Dip",  parent: "dip",    fam: "dip" },
-      { id: "morozov", label: "Morozov",         parent: "impdip", fam: "dip", legendary: true },
-
-      // planche line
-      { id: "planchelean",   label: "Planche Lean",           parent: "START",       fam: "planche" },
-      { id: "pseudopp",      label: "Pseudo Planche Push-Up", parent: "planchelean", fam: "planche" },
-      { id: "planchepush",   label: "Planche Push-Up",        parent: "pseudopp",    fam: "planche" },
-      { id: "planche",       label: "Planche",                parent: "planchepush", fam: "planche" },
-      { id: "oaplanche",     label: "One-Arm Planche",        parent: "planche",     fam: "planche", legendary: true },
-      { id: "oaplanchepush", label: "One-Arm Planche Push-Up",parent: "oaplanche",   fam: "planche", legendary: true },
-      { id: "maltese",       label: "Maltese",                parent: "planchepush", fam: "planche", legendary: true },
-      { id: "bicepplanche",  label: "Bicep Planche",          parent: "planchepush", fam: "planche" },
-      { id: "oabicep",       label: "One-Arm Bicep Planche",  parent: "bicepplanche",fam: "planche", legendary: true },
-
-      // ring strength line
-      { id: "ringturn",     label: "Ring Turn Out",     parent: "START",       fam: "ring" },
-      { id: "ringdip",      label: "Ring Dip",          parent: "ringturn",    fam: "ring" },
-      { id: "ringmu",       label: "Ring Muscle-Up",    parent: "ringdip",     fam: "ring" },
-      { id: "wideringmu",   label: "Wide Ring Muscle-Up",parent: "ringmu",     fam: "ring" },
-      { id: "bulgariandip", label: "Bulgarian Dip",     parent: "wideringmu",  fam: "ring" },
-      { id: "ironcross",    label: "Iron Cross",        parent: "bulgariandip",fam: "ring", legendary: true },
-      { id: "ironcrosspress",label: "Iron Cross Press", parent: "ironcross",   fam: "ring", legendary: true },
-      { id: "butterfly",    label: "Butterfly",         parent: "ironcross",   fam: "ring" },
-      { id: "butterflyinvic",label: "Butterfly → Inv. Iron Cross", parent: "butterfly", fam: "ring", legendary: true },
-      { id: "azarianic",    label: "Azarian to Iron Cross", parent: "ironcross", fam: "ring", legendary: true },
-
-      // ring planche line
-      { id: "ringhs",         label: "Ring Handstand",      parent: "ringturn",  fam: "ringPlanche" },
-      { id: "ringplanche",    label: "Ring Planche",        parent: "ringhs",    fam: "ringPlanche", legendary: true },
-      { id: "ringplanchepress",label: "Ring Planche Press", parent: "ringplanche",fam: "ringPlanche", legendary: true },
-      { id: "ringvictorian",  label: "Ring Victorian Cross",parent: "ringplanche",fam: "ringPlanche", legendary: true },
-
-      // ring maltese line
-      { id: "ringmaltese",       label: "Ring Maltese",              parent: "ringturn",   fam: "ringMaltese", legendary: true },
-      { id: "vangelder",         label: "Van Gelder",                parent: "ringmaltese",fam: "ringMaltese", legendary: true },
-      { id: "azarianpm",         label: "Azarian to Planche/Maltese",parent: "vangelder",  fam: "ringMaltese", legendary: true },
-      { id: "maltesepressinvic", label: "Maltese Press → Inv. IC",   parent: "ringmaltese",fam: "ringMaltese", legendary: true },
-
-      // legendary ring capstones
-      { id: "invic",        label: "Inverted Iron Cross",           parent: "ironcrosspress",  fam: "ring",        legendary: true },
-      { id: "invbutterfly", label: "Inverted Butterfly",            parent: "butterflyinvic",  fam: "ring",        legendary: true },
-      { id: "zanetti",      label: "Zanetti",                       parent: "azarianpm",       fam: "ringMaltese", legendary: true },
-      { id: "carmona",      label: "Carmona",                       parent: "maltesepressinvic",fam: "ringMaltese",legendary: true },
-      { id: "flvictorian",  label: "Front Lever → Victorian Cross", parent: "ringvictorian",   fam: "ringPlanche", legendary: true, locked: true, lockReason: "Requires Front Lever (Pull branch)" },
-      { id: "victorianrp",  label: "Victorian Cross → Reverse Planche", parent: "flvictorian", fam: "ringPlanche", legendary: true, locked: true, lockReason: "Requires Reverse Planche (Core branch)" },
-      { id: "flrp",         label: "Front Lever → Reverse Planche", parent: "ringplanchepress",fam: "ringPlanche", legendary: true, locked: true, lockReason: "Requires Front Lever (Pull branch)" },
-
-      // handstand sub-line
-      { id: "handstand",   label: "Handstand (Wall HS)",       parent: "START",     fam: "handstand" },
-      { id: "hspush",      label: "Handstand Push-Up",         parent: "handstand", fam: "handstand" },
-      { id: "imptiger",    label: "Imp. Tigerbend HS Push-Up", parent: "hspush",    fam: "handstand", legendary: true },
-      { id: "maltesepress",label: "Maltese Press",             parent: "imptiger",  fam: "handstand", legendary: true, connector: "OR", extra: ["planchepress"] },
-      { id: "hspike",      label: "HS Pike Press",             parent: "handstand", fam: "handstand" },
-      { id: "planchepress",label: "Planche Press",             parent: "hspike",    fam: "handstand", legendary: true },
-      { id: "oahandstand", label: "One-Arm Handstand",         parent: "handstand", fam: "handstand", legendary: true },
-      { id: "oahspress",   label: "One-Arm HS Press",          parent: "oahandstand",fam: "handstand", legendary: true },
-    ],
-  },
-
-  {
-    key: "pull", label: "Pull", icon: "🧗", color: "#4eb0ff", complete: false,
-    nodes: [
-      { id: "pullup",  label: "Pull-Up",           parent: "START",  fam: "pull" },
-      { id: "ringpull",label: "Ring Pull-Up",      parent: "pullup", fam: "pull" },
-      { id: "barmu",   label: "Bar Muscle-Up",     parent: "ringpull",fam: "pull", connector: "AND", extra: ["pullup"] },
-      { id: "oachin",  label: "One-Arm Chin-Up",   parent: "pullup", fam: "pull", legendary: true },
-      { id: "oapull",  label: "One-Arm Pull-Up",   parent: "pullup", fam: "pull", legendary: true },
-      { id: "oamu",    label: "One-Arm Muscle-Up", parent: "barmu",  fam: "pull", legendary: true },
-
-      { id: "frontlever",label: "Front Lever",             parent: "pullup",    fam: "frontLever" },
-      { id: "oafl",      label: "One-Arm Front Lever",     parent: "frontlever",fam: "frontLever", legendary: true },
-      { id: "oaflpu",    label: "One-Arm Front Lever Pull-Up",parent: "oafl",   fam: "frontLever", legendary: true },
-      { id: "flpull",    label: "Front Lever Pull",        parent: "frontlever",fam: "frontLever" },
-      { id: "flpu",      label: "Front Lever Pull-Up",     parent: "flpull",    fam: "frontLever" },
-
-      { id: "pbvictorian",   label: "PB Victorian",   parent: "frontlever",  fam: "victorian" },
-      { id: "floorvictorian",label: "Floor Victorian",parent: "pbvictorian", fam: "victorian", legendary: true },
-
-      { id: "backlever",     label: "Back Lever",              parent: "START",      fam: "backLever" },
-      { id: "backleverpu",   label: "Back Lever Pull-Up",      parent: "backlever",  fam: "backLever" },
-      { id: "oabacklever",   label: "One-Arm Back Lever",      parent: "backleverpu",fam: "backLever", legendary: true },
-      { id: "oabackleverpu", label: "One-Arm Back Lever Pull-Up",parent: "oabacklever",fam: "backLever", legendary: true },
-
-      { id: "hefesto",        label: "Hefesto",                    parent: "backleverpu",  fam: "hefesto", legendary: true },
-      { id: "hefestofrombl",  label: "Hefesto From Back Lever",    parent: "hefesto",      fam: "hefesto", legendary: true },
-      { id: "oahefestofrombl",label: "One-Arm Hefesto From BL",    parent: "hefestofrombl",fam: "hefesto", legendary: true },
-      { id: "oahefesto",      label: "One-Arm Hefesto",            parent: "hefesto",      fam: "hefesto", legendary: true },
-      { id: "pelican",        label: "Pelican",                    parent: "backleverpu",  fam: "hefesto" },
-    ],
-  },
-
-  {
-    key: "legs", label: "Legs", icon: "🦵", color: "#c084ff", complete: false,
-    nodes: [
-      // squat main line
-      { id: "squat",      label: "Squat",              parent: "START",       fam: "squat" },
-      { id: "pistol",     label: "Pistol Squat",       parent: "squat",       fam: "squat" },
-      { id: "shrimp",     label: "Shrimp Squat",       parent: "pistol",      fam: "shrimp" },
-      { id: "sissy",      label: "Sissy Squat",        parent: "shrimp",      fam: "sissy" },
-      { id: "hawaiian",   label: "Hawaiian Squat",     parent: "sissy",       fam: "squat" },
-      { id: "naturalext", label: "Natural Leg Extension",parent: "hawaiian",  fam: "legext" },
-      { id: "naturalpress",label: "Natural Leg Press", parent: "naturalext",  fam: "legext" },
-      { id: "matrixext",  label: "Matrix Leg Extension",parent: "naturalpress",fam: "legext" },
-      { id: "legextlever",label: "Leg Extension Lever",parent: "matrixext",   fam: "legext", legendary: true },
-
-      // sissy branch
-      { id: "sissy1leg",    label: "One-Leg Sissy Squat",         parent: "sissy",         fam: "sissy" },
-      { id: "sissy1legelev",label: "Elevated One-Leg Sissy Squat",parent: "sissy1leg",     fam: "sissy" },
-      { id: "shrimpblaster",label: "Shrimp Squat Blaster",        parent: "sissy1legelev", fam: "sissy", legendary: true },
-
-      // shrimp branch
-      { id: "shrimpelev", label: "Elevated Shrimp Squat", parent: "shrimp", fam: "shrimp" },
-
-      // leg-ext / press branches
-      { id: "naturalext1leg",     label: "One-Leg Natural Leg Ext.",    parent: "naturalext",   fam: "legext" },
-      { id: "naturalpress1leg",   label: "One-Leg Natural Leg Press",   parent: "naturalpress", fam: "legext" },
-      { id: "naturalpress1legelev",label: "Elev. One-Leg Natural Leg Press",parent: "naturalpress1leg",fam: "legext", legendary: true },
-      { id: "matrixext1leg",      label: "One-Leg Matrix Leg Ext.",     parent: "matrixext",    fam: "legext" },
-      { id: "matrixext1legelev",  label: "Elev. One-Leg Matrix Leg Ext.",parent: "matrixext1leg",fam: "legext", legendary: true },
-      { id: "legextlever1leg",    label: "One-Leg Leg Extension Lever", parent: "legextlever",  fam: "legext", legendary: true },
-
-      // hamstring line
-      { id: "hambridge",     label: "Hamstring Bridge",          parent: "START",     fam: "hamstring" },
-      { id: "nordic",        label: "Nordic Hamstring Curl",     parent: "hambridge", fam: "hamstring" },
-      { id: "nordic1leg",    label: "One-Leg Nordic Curl",       parent: "nordic",    fam: "hamstring" },
-      { id: "invnordic",     label: "Inverted Nordic Curl",      parent: "nordic1leg",fam: "hamstring", legendary: true },
-      { id: "elev1legnordic",label: "Elev. One-Leg Nordic Curl", parent: "invnordic", fam: "hamstring", legendary: true },
-      { id: "oa1leginvnordic",label: "One-Leg Inv. Nordic Curl", parent: "invnordic", fam: "hamstring", legendary: true },
-    ],
-  },
-
-  {
-    key: "core", label: "Core", icon: "🔥", color: "#ffd24e", complete: true,
-    nodes: [
-      { id: "tucksit", label: "Tuck-Sit", parent: "START",   fam: "sit" },
-      { id: "lsit",    label: "L-Sit",    parent: "tucksit", fam: "sit" },
-      { id: "vsit",    label: "V-Sit",    parent: "lsit",    fam: "sit" },
-      { id: "manna",   label: "Manna",    parent: "vsit",    fam: "sit", legendary: true },
-
-      { id: "plank",        label: "Plank",              parent: "START",       fam: "dragon" },
-      { id: "dragonflag",   label: "Dragon Flag",        parent: "plank",       fam: "dragon" },
-      { id: "oadragonflag", label: "One-Arm Dragon Flag",parent: "dragonflag",  fam: "dragon", legendary: true },
-      { id: "dragonpress",  label: "Dragon Press",       parent: "oadragonflag",fam: "dragon", legendary: true },
-      { id: "oadragonpress",label: "One-Arm Dragon Press",parent: "dragonpress",fam: "dragon", legendary: true },
-
-      { id: "reverseplanche",label: "Reverse Planche", parent: "START", fam: "reverse", locked: true, lockReason: "Requires Pull-Up (Pull branch)" },
-      { id: "pullfrreverse", label: "Pull-Up → Front Lever → Reverse Planche", parent: "reverseplanche", fam: "reverse", legendary: true, locked: true, lockReason: "Requires Front Lever (Pull branch)" },
-    ],
-  },
-
-  {
-    key: "cardio", label: "Cardio", icon: "⚡", color: "#4ee0a8", complete: true,
-    nodes: [
-      { id: "jumpingjacks",label: "Jumping Jacks",   parent: "START",       fam: "cardio" },
-      { id: "highknees",   label: "High Knees",      parent: "jumpingjacks",fam: "cardio" },
-      { id: "burpee",      label: "Burpee",          parent: "highknees",   fam: "cardio" },
-      { id: "mountain",    label: "Mountain Climbers",parent: "burpee",     fam: "cardio" },
-      { id: "sprint",      label: "Sprint Intervals",parent: "mountain",    fam: "cardio" },
-      { id: "jumprope",    label: "Jump Rope",       parent: "jumpingjacks",fam: "cardio" },
-      { id: "burpeepull",  label: "Burpee Pull-Up",  parent: "burpee",      fam: "cardio", locked: true, lockReason: "Requires Pull-Up (Pull branch)" },
-    ],
-  },
-];
+const {
+  FAMILY, CATEGORIES, RANKS, REPS_PER_RANK, UNLOCK_REPS, STARTERS,
+  repsOf, addRepsTo, setRepsTo, rankIndex, isUnlocked,
+  isFavourite, toggleFavourite,
+} = window.MuSkills;
 
 /* ---------------------------------------------------------------------
    Layout engine: radial tidy-tree fanned into an upward "V" wedge
@@ -278,62 +77,14 @@ const ROT_STEP   = 122;                     // deg between adjacent wedges in th
 const R_START   = 210;                      // vertical radius of the START base (used for edge offset + text)
 const R_START_X = 250;                       // horizontal radius — a touch wider than tall
 
-// progression: every 200 reps is a new rank; reaching Novice (200) unlocks the next skill
-const RANKS = ["Beginner", "Novice", "Intermediate", "Advanced", "Mastered"];
-const REPS_PER_RANK = 200;
-const UNLOCK_REPS = 200;
-
-// First-run check-in: the ground-floor skill of each line. Ticking one
-// credits it with UNLOCK_REPS, which opens everything sitting above it.
-const STARTERS = [
-  { cat: "push",   id: "pushup",       icon: "💪", target: "10 clean reps" },
-  { cat: "push",   id: "dip",          icon: "🔻", target: "5 full-depth reps" },
-  { cat: "pull",   id: "pullup",       icon: "🧗", target: "1 dead-hang rep" },
-  { cat: "legs",   id: "squat",        icon: "🦵", target: "20 deep reps" },
-  { cat: "legs",   id: "hambridge",    icon: "🌉", target: "10 controlled reps" },
-  { cat: "core",   id: "plank",        icon: "🔥", target: "a 30-second hold" },
-  { cat: "core",   id: "tucksit",      icon: "🪑", target: "a 15-second hold" },
-  { cat: "cardio", id: "jumpingjacks", icon: "🏃", target: "50 unbroken" },
-];
-
 // clean inline padlock (no emoji)
 const LOCK_SVG =
   '<svg class="lock-ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">' +
   '<path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v3H6.5A2.5 2.5 0 0 0 4 12.5v6A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-6A2.5 2.5 0 0 0 17.5 10H17V7a5 5 0 0 0-5-5zm3 8H9V7a3 3 0 0 1 6 0v3zm-3 3.25a1.75 1.75 0 0 1 .75 3.33V19a.75.75 0 0 1-1.5 0v-2.42A1.75 1.75 0 0 1 12 13.25z"/>' +
   '</svg>';
 
-/* ---------------------------------------------------------------------
-   Progression state (persisted per skill, scoped to the signed-in account)
-   --------------------------------------------------------------------- */
-const REPS_BASE = "mu-reps";
-let repsState = {};
-
-function repsKey() {
-  return window.MuAuth ? window.MuAuth.scopedKey(REPS_BASE) : REPS_BASE;
-}
-function loadReps() {
-  try { repsState = JSON.parse(localStorage.getItem(repsKey()) || "{}") || {}; } catch (e) { repsState = {}; }
-}
-function saveReps() {
-  try { localStorage.setItem(repsKey(), JSON.stringify(repsState)); } catch (e) {}
-}
-loadReps();
-
-function repsOf(catKey, id) { return repsState[`${catKey}:${id}`] || 0; }
-function addRepsTo(catKey, id, n) {
-  const k = `${catKey}:${id}`;
-  repsState[k] = Math.max(0, (repsState[k] || 0) + n);
-  saveReps();
-}
-function setRepsTo(catKey, id, n) {
-  repsState[`${catKey}:${id}`] = Math.max(0, n);
-  saveReps();
-}
-function rankIndex(reps) { return Math.min(RANKS.length - 1, Math.floor(reps / REPS_PER_RANK)); }
-function isUnlocked(cat, node) {
-  if (node.parent === "START") return true;            // roots (closest to START) always open
-  return repsOf(cat.key, node.parent) >= UNLOCK_REPS;  // parent must reach Novice
-}
+// the star drawn on a favourited node and inside the popup button
+const STAR_PATH = "M12 2.6l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.4l-5.8 3.06 1.11-6.46-4.7-4.58 6.49-.94z";
 
 function layoutCategory(cat) {
   const nodes = cat.nodes;
@@ -423,6 +174,13 @@ function lockGlyph(cx, cy) {
     '<path d="M12 2a5 5 0 0 0-5 5v3H6.5A2.5 2.5 0 0 0 4 12.5v6A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-6A2.5 2.5 0 0 0 17.5 10H17V7a5 5 0 0 0-5-5zm3 8H9V7a3 3 0 0 1 6 0v3z"/></g>';
 }
 
+// favourite star, drawn as a native SVG path centred on (cx, cy)
+function starGlyph(cx, cy, scale) {
+  const s = scale || 1;
+  return `<g class="skill-star" transform="translate(${(cx - 12 * s).toFixed(1)},${(cy - 12 * s).toFixed(1)}) scale(${s})">` +
+    `<path d="${STAR_PATH}"/></g>`;
+}
+
 function trimLine(from, to, offFrom, offTo) {
   const dx = to.x - from.x, dy = to.y - from.y;
   const len = Math.hypot(dx, dy) || 1;
@@ -499,10 +257,12 @@ function renderCategorySVG(cat) {
     const unlocked = isUnlocked(cat, n);
     const reps = repsOf(cat.key, n.id);
     const mastered = unlocked && rankIndex(reps) >= RANKS.length - 1;
+    const starred = isFavourite(`${cat.key}:${n.id}`);
     const cls = ["skill-node"];
     if (n.legendary) cls.push("is-legendary");
     if (!unlocked) cls.push("is-locked");
     if (mastered) cls.push("is-mastered");
+    if (starred) cls.push("is-favourite");
 
     const inner = unlocked
       ? `<text class="skill-dot__icon" x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" dy="0.34em" text-anchor="middle">${f.icon || "•"}</text>`
@@ -524,9 +284,13 @@ function renderCategorySVG(cat) {
       (prog > 0 ? `<rect class="skill-bar__fill" x="${barX.toFixed(1)}" y="${barY.toFixed(1)}" width="${(barW * prog).toFixed(1)}" height="${barH}" rx="${barH / 2}"/>` : "") +
       `</g>`;
 
+    // a gold star sits on the shoulder of the one skill you've favourited
+    const star = starred ? starGlyph(c.x + CIRCLE_R * 0.72, c.y - CIRCLE_R * 0.72, 0.86) : "";
+
     svg += `<g class="${cls.join(" ")}" data-node="${cat.key}:${n.id}" style="--fam:${cat.color}">` +
       `<circle class="skill-dot" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${CIRCLE_R}"/>` +
       inner +
+      star +
       `<text class="skill-dot__label" x="${c.x.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle">${label}</text>` +
       bar +
       `</g>`;
@@ -737,10 +501,10 @@ function initSkillTree() {
       open();
     }));
 
-  // switching account (in either direction) swaps which tree is on screen
+  // switching account (in either direction) swaps which tree is on screen.
+  // MuSkills has already reloaded that account's reps by the time this runs.
   if (window.MuAuth) {
     window.MuAuth.onChange(() => {
-      loadReps();
       syncPreviewBar();
       if (overlay.classList.contains("is-open")) { build(); updateChrome(); layoutWheel(); }
     });
@@ -852,11 +616,19 @@ function initSkillTree() {
     const into = reps % REPS_PER_RANK;
     const isMax = ri >= RANKS.length - 1;
 
+    const starred = isFavourite(key);
     const badgeCls = unlocked ? (isMax ? "is-mastered" : "") : "is-locked";
     let html = `<div class="pop-head">` +
       `<div class="pop-badge ${badgeCls}" style="--fam:${cat.color}">${unlocked ? (f.icon || "•") : LOCK_SVG}</div>` +
       `<div><h3 class="pop-name">${esc(node.label)}</h3>` +
       `<div class="pop-sub">${esc(cat.label)}${isMax ? " · Mastered" : ""}</div></div></div>`;
+
+    // Favourite the position — one per account, shown next to your name on
+    // the leaderboard. Locked skills count too: a goal is a fine favourite.
+    html += `<button type="button" id="pop-fav" class="pop-fav${starred ? " is-on" : ""}" ` +
+      `aria-pressed="${starred}">` +
+      `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="${STAR_PATH}"/></svg>` +
+      `<span>${starred ? "Your favourite position" : "Make this my favourite"}</span></button>`;
 
     if (!unlocked) {
       const parent = cat.nodes.find((n) => n.id === node.parent);
@@ -886,6 +658,15 @@ function initSkillTree() {
     popEl.dataset.key = key;
     popEl.hidden = false;
     requestAnimationFrame(() => popEl.classList.add("is-open"));
+
+    const favBtn = document.getElementById("pop-fav");
+    if (favBtn) {
+      favBtn.addEventListener("click", () => {
+        toggleFavourite(key);
+        build(); layoutWheel();      // move the star to (or off) the node
+        openPopup(key);              // refresh popup contents
+      });
+    }
 
     const doAdd = (n) => {
       if (!n || n <= 0) return;

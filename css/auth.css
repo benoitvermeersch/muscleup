@@ -17,6 +17,17 @@
   background: var(--surface);
 }
 
+/* the avatar + name half of the chip links through to the profile page */
+.account__me {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: 999px;
+  transition: opacity 0.15s ease;
+}
+.account__me:hover { opacity: 0.78; }
+.account__me:hover .account__email { color: var(--text); }
+
 .account__avatar {
   display: inline-flex;
   align-items: center;

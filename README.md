@@ -28,6 +28,46 @@ inherit each other's tree. Signed out, progress is kept on the device under
 a `guest` key; it stays separate from any account you later sign in to,
 rather than being merged into it.
 
+## Your profile
+
+Signing up asks for an email and a password, nothing else. The name comes
+later, on **`profile.html`** — username, first name, last name, and that's
+it for now. The username is what other athletes see; the email never leaves
+your own screen.
+
+Usernames are 3–20 characters of letters, numbers and underscores, and are
+unique across the site (case-insensitively, so `Ben` and `ben` can't both
+exist). Until you set one, the leaderboard calls you `Athlete 1a2b` after
+the first characters of your account id.
+
+## The leaderboard
+
+**`leaderboard.html`** lists **every account ever registered** — not just
+the ones who have trained — ranked by total reps. Each row shows:
+
+- **Total reps** — everything logged across all five branches
+- **Top branch** — whichever of Push, Pull, Legs, Core or Cardio holds the
+  most of those reps
+- **Favourite position** — the one skill you've starred
+
+### Favouriting a position
+
+Open any skill in the tree and hit **Make this my favourite**. The node
+gets a gold star and the skill's name appears next to you on the
+leaderboard. Starring another position moves the star; starring the one
+you've already starred clears it. Locked skills can be favourited too — a
+goal makes a perfectly good favourite.
+
+### Where the numbers come from
+
+Reps live in the browser's local storage, which nobody else can read, so
+the aggregate the board needs (total, per-branch totals, top branch,
+favourite) is published to your `profiles` row as you train. Per-skill
+counts stay on your device.
+
+In local mode there's nothing to publish: every account on the device is
+already readable, so the board is built straight from local storage.
+
 ### Turning on real email
 
 MuscleUp is a static site with no server of its own, so accounts and the
@@ -43,6 +83,16 @@ which runs entirely from the browser. To switch it on:
 
 5. **Add custom SMTP** — Project Settings → Authentication → SMTP Settings.
    Without this almost nobody receives the email (see below).
+
+6. **Run `supabase/schema.sql`** — SQL Editor → New query → paste → Run.
+   This creates the `profiles` table the leaderboard reads, plus a trigger
+   on `auth.users` so every new account gets a row the moment it signs up,
+   and backfills rows for accounts that already exist. Re-running it is
+   safe. Without it the leaderboard says so rather than failing silently.
+
+   Row-level security lets anyone read the table and only its owner write
+   to it. No email address is stored there — the board is world readable,
+   and it has no business handing out everyone's address.
 
 Either key format works: the legacy `anon` JWT (`eyJ...`) or the newer
 publishable key (`sb_publishable_...`). Both are meant to be public — they
@@ -80,15 +130,27 @@ don't treat a local-mode account as protecting anything.
 
 ```
 .
-├── index.html          # landing page, auth dialog, skill-tree overlay
-├── assets/logo.svg     # the mark, white on transparent
-├── assets/favicon.svg  # the mark on a dark rounded tile
-├── css/style.css       # landing page + skill tree styles
-├── css/auth.css        # auth dialog, account chip, first-run check-in
-├── js/auth-config.js   # Supabase URL + anon key (empty → local mode)
-├── js/auth.js          # signup / login / verification + auth UI
-└── js/script.js        # skill tree wheel + progression
+├── index.html            # landing page + skill-tree overlay
+├── leaderboard.html      # every registered athlete, ranked
+├── profile.html          # username / first name / last name
+├── assets/logo.svg       # the mark, white on transparent
+├── assets/favicon.svg    # the mark on a dark rounded tile
+├── css/style.css         # landing page + skill tree styles
+├── css/auth.css          # auth dialog, account chip, first-run check-in
+├── css/pages.css         # leaderboard + profile pages
+├── js/auth-config.js     # Supabase URL + anon key (empty → local mode)
+├── js/auth.js            # signup / login / verification + the auth dialog
+├── js/skills.js          # branches, rep counters, favourite, aggregates
+├── js/profiles.js        # profile storage + the leaderboard feed
+├── js/script.js          # skill tree wheel + progression
+├── js/leaderboard.js     # the rankings table
+├── js/profile-page.js    # the profile form
+└── supabase/schema.sql   # profiles table, RLS and the signup trigger
 ```
+
+The sign up / log in dialog is built by `js/auth.js` rather than written
+into each page, so a page becomes sign-in-able just by loading that script
+and putting an `#auth-slot` in its header.
 
 ## Look and feel
 
