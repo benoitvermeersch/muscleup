@@ -64,6 +64,17 @@ document.addEventListener("DOMContentLoaded", () => {
       `</li>`;
   }
 
+  function paint(profiles, meId) {
+    const meIndex = profiles.findIndex((p) => p.id === meId);
+    let html = profiles.slice(0, TOP).map((p, i) => row(p, i + 1, meId)).join("");
+    // your own line, when you're below the cut
+    if (meIndex >= TOP) {
+      html += `<li class="tree-board__gap" aria-hidden="true">···</li>`;
+      html += row(profiles[meIndex], meIndex + 1, meId);
+    }
+    listEl.innerHTML = html;
+  }
+
   /* ---- load + draw ---- */
   let loading = false;
   let queued = false;
@@ -81,24 +92,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (loading) { queued = true; return; }
     loading = true;
 
+    // last known standings first, so opening the panel shows something the
+    // instant it expands rather than an empty box
+    const known = window.MuProfiles.cachedList();
+    if (known && !listEl.children.length) { paint(known, user.id); setStatus(""); }
+
     try {
-      // same reasoning as the full board: publish my reps before reading,
-      // so my own line can't show yesterday's numbers
-      if (push) {
-        try { await window.MuProfiles.pushStats(); } catch (err) { /* shown below if listing fails too */ }
-      }
+      // publishing and reading don't depend on each other, so they go
+      // together; my own line is patched from this device either way
+      const listing = window.MuProfiles.list();
+      if (push) await window.MuProfiles.pushStats().catch(() => {});
+      const profiles = await listing;
 
-      const profiles = await window.MuProfiles.list();
-      const meIndex = profiles.findIndex((p) => p.id === user.id);
-
-      let html = profiles.slice(0, TOP).map((p, i) => row(p, i + 1, user.id)).join("");
-      // your own line, when you're below the cut
-      if (meIndex >= TOP) {
-        html += `<li class="tree-board__gap" aria-hidden="true">···</li>`;
-        html += row(profiles[meIndex], meIndex + 1, user.id);
-      }
-
-      listEl.innerHTML = html;
+      paint(profiles, user.id);
       setStatus(profiles.length ? "" : "No athletes registered yet.");
     } catch (err) {
       listEl.innerHTML = "";

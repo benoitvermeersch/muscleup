@@ -38,6 +38,13 @@
   const PROFILE_BASE = "mu-profile";
   const USERS_KEY = "mu-users";
 
+  // Last known answers, kept so a page can paint something real before the
+  // network has said anything. Everything here is either public (the board)
+  // or already this browser's own (your profile).
+  const CACHE_LIST = "mu-cache-board";
+  const CACHE_COUNT = "mu-cache-count";
+  const CACHE_MINE = "mu-cache-profile";
+
   const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
   const INT4_MAX = 2147483647;   // the ceiling on a Postgres integer column
 
@@ -64,6 +71,12 @@
     const user = global.MuAuth && global.MuAuth.currentUser();
     return user ? user.id : null;
   };
+
+  // your own profile is cached per account — one browser, two athletes
+  function scopedCacheKey(base) {
+    const id = uid();
+    return id ? `${base}:${id}` : `${base}:guest`;
+  }
 
   // Nothing non-numeric reaches the database. An Infinity here would be
   // written by JSON.stringify as `null`, which a NOT NULL integer column
@@ -246,7 +259,10 @@
   /* ------------------------------------------------------------------
      Cache + change notification
      ------------------------------------------------------------------ */
-  let cached = null;
+
+  // seeded synchronously from the last visit, so mine() answers before the
+  // first request has even been sent
+  let cached = readJSON(scopedCacheKey(CACHE_MINE), null);
   let loadedFor = null;   // which account `cached` belongs to
   const listeners = [];
 
@@ -263,7 +279,9 @@
     const before = JSON.stringify(cached === undefined ? null : cached);
     const after = JSON.stringify(next === undefined ? null : next);
     cached = next;
-    if (before !== after) emit();
+    if (before === after) return;
+    writeJSON(scopedCacheKey(CACHE_MINE), cached);   // ready for the next visit
+    emit();
   }
 
   function mine() { return cached; }
@@ -463,18 +481,53 @@
      The leaderboard feed — everyone who ever registered
      ------------------------------------------------------------------ */
   async function list() {
-    if (REMOTE) {
-      // a row exists per auth user (created by the signup trigger), so this
-      // is every registered account, not just the ones who filled a form in
-      const rows = await rest(
-        `/profiles?select=${COLUMNS}&order=total_reps.desc,created_at.asc`
-      );
-      return (rows || []).map(normalise);
+    if (!REMOTE) {
+      return withMine(localAccounts()
+        .map((u) => localProfile(u.id))
+        .sort((a, b) => b.totalReps - a.totalReps || String(a.id).localeCompare(String(b.id))));
     }
 
-    return localAccounts()
-      .map((u) => localProfile(u.id))
-      .sort((a, b) => b.totalReps - a.totalReps || String(a.id).localeCompare(String(b.id)));
+    // a row exists per auth user (created by the signup trigger), so this
+    // is every registered account, not just the ones who filled a form in
+    const rows = await rest(
+      `/profiles?select=${COLUMNS}&order=total_reps.desc,created_at.asc`
+    );
+    const board = (rows || []).map(normalise);
+    writeJSON(CACHE_LIST, board);
+    return withMine(board);
+  }
+
+  // What the board last looked like, available with no network at all. Rows
+  // are public data, so there is nothing here another athlete couldn't see.
+  function cachedList() {
+    const board = readJSON(CACHE_LIST, null);
+    return Array.isArray(board) && board.length ? withMine(board) : null;
+  }
+
+  // The table's copy of my row is only as fresh as my last successful push,
+  // but my reps are sitting in this browser — so overwrite my own line with
+  // what's true locally rather than waiting for a round trip to agree.
+  function withMine(rows) {
+    const id = uid();
+    if (!id || !global.MuSkills) return rows;
+
+    const stats = global.MuSkills.stats();
+    const existing = rows.find((r) => r.id === id) || cached || { id };
+    const mine = Object.assign({}, existing, {
+      id,
+      totalReps: stats.totalReps,
+      categoryReps: stats.categoryReps,
+      topCategory: stats.topCategory,
+      favouriteSkill: stats.favouriteSkill,
+      favouriteSkillLabel: stats.favouriteSkillLabel,
+    });
+
+    return rows
+      .filter((r) => r.id !== id)
+      .concat([mine])
+      .sort((a, b) =>
+        b.totalReps - a.totalReps ||
+        String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
   }
 
   /* ------------------------------------------------------------------
@@ -484,6 +537,11 @@
      rows and send none of them back, rather than downloading the whole
      table to measure its length.
      ------------------------------------------------------------------ */
+  function cachedCount() {
+    const n = readJSON(CACHE_COUNT, null);
+    return typeof n === "number" && n > 0 ? n : null;
+  }
+
   async function count() {
     if (!REMOTE) return localAccounts().length;
 
@@ -499,10 +557,14 @@
 
     // "0-0/12" — the total is the part after the slash
     const total = parseInt(String(res.headers.get("content-range") || "").split("/")[1], 10);
-    if (Number.isFinite(total)) return total;
+    if (Number.isFinite(total)) {
+      writeJSON(CACHE_COUNT, total);
+      return total;
+    }
 
     // header not exposed by CORS — fall back to counting what we're given
     const rows = await list();
+    writeJSON(CACHE_COUNT, rows.length);
     return rows.length;
   }
 
@@ -553,7 +615,9 @@
     load,
     save,
     list,
+    cachedList,
     count,
+    cachedCount,
     pushStats,
     deleteAccount,
     displayName,

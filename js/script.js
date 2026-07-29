@@ -20,13 +20,18 @@ function initUserCount() {
   const label = document.getElementById("stat-users-label");
   if (!block || !value || !window.MuProfiles) return;
 
+  const show = (total) => {
+    value.textContent = total.toLocaleString();
+    label.textContent = total === 1 ? "Active User" : "Active Users";
+    block.hidden = false;
+  };
+
+  // last visit's number, on screen before the request is even sent
+  const known = window.MuProfiles.cachedCount();
+  if (known) show(known);
+
   window.MuProfiles.count()
-    .then((total) => {
-      if (!total) return;
-      value.textContent = total.toLocaleString();
-      label.textContent = total === 1 ? "Active User" : "Active Users";
-      block.hidden = false;
-    })
+    .then((total) => { if (total) show(total); })
     .catch((err) => console.warn("[MuscleUp] user count unavailable:", err.message));
 }
 

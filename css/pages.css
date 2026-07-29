@@ -482,6 +482,40 @@
   .pf-danger__row { flex-direction: column; align-items: flex-start; gap: 12px; }
 }
 
+/* ---------- first-load placeholders ---------- */
+
+/* Only ever seen on a genuine first visit: afterwards the last known board
+   is painted from cache while the fresh one is fetched. */
+@keyframes lb-shimmer {
+  0%   { opacity: 0.45; }
+  50%  { opacity: 0.8; }
+  100% { opacity: 0.45; }
+}
+
+.sk {
+  display: inline-block;
+  height: 11px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  animation: lb-shimmer 1.25s ease-in-out infinite;
+}
+.sk--rank   { width: 14px; }
+.sk--avatar { width: 34px; height: 34px; border-radius: 50%; margin-right: 12px; vertical-align: middle; }
+.sk--name   { width: 110px; vertical-align: middle; }
+.sk--reps   { width: 62px; }
+.sk--chip   { width: 78px; height: 24px; border-radius: 999px; }
+.sk--fav    { width: 120px; }
+
+.lb-row.is-skeleton:hover { background: none; }
+.lb-stat.is-skeleton .lb-stat__value {
+  display: block;
+  width: 54px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  animation: lb-shimmer 1.25s ease-in-out infinite;
+}
+
 /* =================================================
    Contact
    ================================================= */

@@ -102,6 +102,35 @@ document.addEventListener("DOMContentLoaded", () => {
       .join("");
   }
 
+  /* ---- drawing ---- */
+  function draw(profiles, meId) {
+    renderSummary(profiles, meId);
+    bodyEl.innerHTML = profiles.map((p, i) => row(p, i, meId)).join("");
+    countEl.textContent = profiles.length === 1
+      ? "1 athlete"
+      : `${nf.format(profiles.length)} athletes`;
+  }
+
+  // first visit only: rows of the right shape so the page doesn't jump
+  // when the real ones arrive
+  function drawSkeleton() {
+    summaryEl.innerHTML = ["Your rank", "Your total reps"]
+      .map((label) =>
+        `<div class="lb-stat is-skeleton"><span class="lb-stat__value">&nbsp;</span>` +
+        `<span class="lb-stat__label">${label}</span></div>`)
+      .join("");
+
+    bodyEl.innerHTML = Array.from({ length: 3 }, () =>
+      `<tr class="lb-row is-skeleton" aria-hidden="true">` +
+      `<td class="lb-rank"><span class="sk sk--rank"></span></td>` +
+      `<td class="lb-athlete"><span class="sk sk--avatar"></span><span class="sk sk--name"></span></td>` +
+      `<td class="lb-reps"><span class="sk sk--reps"></span></td>` +
+      `<td class="lb-cat"><span class="sk sk--chip"></span></td>` +
+      `<td class="lb-favcell"><span class="sk sk--fav"></span></td>` +
+      `</tr>`).join("");
+    countEl.textContent = "";
+  }
+
   /* ---- load + draw ---- */
   let loading = false;
   let queued = false;
@@ -117,28 +146,32 @@ document.addEventListener("DOMContentLoaded", () => {
     if (loading) { queued = true; return; }
 
     loading = true;
-    setStatus("Loading the leaderboard…");
-    try {
-      // Reps live in this browser, so my row is only as fresh as the last
-      // push. Publish before reading rather than trusting the debounced
-      // background sync to have landed — that's what leaves your own line
-      // showing zeroes right after a session in the tree.
-      let syncError = null;
-      try {
-        await window.MuProfiles.pushStats();
-      } catch (err) {
-        syncError = err;
-      }
 
-      const profiles = await window.MuProfiles.list();
-      renderSummary(profiles, user.id);
-      bodyEl.innerHTML = profiles.map((p, i) => row(p, i, user.id)).join("");
-      countEl.textContent = profiles.length === 1
-        ? "1 athlete"
-        : `${nf.format(profiles.length)} athletes`;
+    // Paint what we already know before touching the network. On a repeat
+    // visit the table is there immediately and simply corrects itself; only
+    // a genuine first load ever shows the placeholder rows.
+    const known = window.MuProfiles.cachedList();
+    if (known) {
+      draw(known, user.id);
+      setStatus("Updating…");
+    } else {
+      drawSkeleton();
+      setStatus("Loading the leaderboard…");
+    }
+
+    try {
+      // Publishing my reps and reading the board don't depend on each
+      // other, so they go together rather than one after the other — and
+      // my own row is patched from this device regardless, so the table is
+      // right whether or not the write has landed yet.
+      const listing = window.MuProfiles.list();
+      const syncError = await window.MuProfiles.pushStats().then(() => null, (err) => err);
+      const profiles = await listing;
+
+      draw(profiles, user.id);
 
       if (syncError) {
-        setStatus(`Your own reps may be out of date — ${syncError.message}`, "warn");
+        setStatus(`Your own reps may not have saved — ${syncError.message}`, "warn");
       } else {
         setStatus(profiles.length ? "" : "No athletes registered yet.");
       }
