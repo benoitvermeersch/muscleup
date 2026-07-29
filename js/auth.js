@@ -828,6 +828,8 @@ document.addEventListener("DOMContentLoaded", () => {
       { label: "Skill Tree", href: TREE_HREF, tree: true },
       { label: "Leaderboard", href: () => "leaderboard.html", page: "leaderboard" },
       { label: "Profile", href: () => "profile.html", page: "profile" },
+      // last in both navs, so it sits in the same place either way
+      { label: "Contact", href: () => "contact.html", page: "contact" },
     ],
   };
 

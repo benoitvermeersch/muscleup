@@ -61,9 +61,9 @@ to add it**; until then, deleting says so rather than failing quietly.
 
 ## Contact
 
-**`contact.html`** is the page behind the signed-out nav: who's building
-this and how to reach them. Signed in, the nav is the app instead, but the
-page stays reachable by URL.
+**`contact.html`** is who's building this and how to reach them. It's the
+last link in the header either way — signed out and signed in — so it sits
+in the same place whatever state you're in.
 
 ## The leaderboard
 
@@ -202,7 +202,7 @@ The sign up / log in dialog **and the header navigation** are built by
 just by loading that script and putting an `#auth-slot` and an empty
 `#nav-links` in its header. That's also what keeps the nav identical
 everywhere: signed out it's How It Works / Skill Tree / AI Coach / Contact, and
-signed in it's Home / Skill Tree / Leaderboard / Profile — the links don't
+signed in it's Home / Skill Tree / Leaderboard / Profile / Contact — the links don't
 shuffle as you move between pages.
 
 Assets are referenced with a `?v=` query string. **Bump it whenever you
