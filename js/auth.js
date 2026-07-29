@@ -844,6 +844,52 @@ document.addEventListener("DOMContentLoaded", () => {
       .join("");
   }
 
+  /* ---- mobile menu ----
+
+     Below the nav breakpoint the links live in a panel behind a button in
+     the header (see css/style.css). It's the same #nav-links list that
+     renderNav fills, so signing in or out changes what the menu holds
+     without this code knowing anything about the items.  */
+
+  const burger = document.getElementById("nav-burger");
+  const headerEl = document.querySelector(".site-header");
+  const NAV_BREAKPOINT = 900;   // keep in step with the media query
+
+  function setNavOpen(open) {
+    if (!headerEl || !burger) return;
+    headerEl.classList.toggle("is-nav-open", open);
+    burger.setAttribute("aria-expanded", String(open));
+    burger.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+  }
+
+  if (burger && headerEl) {
+    burger.addEventListener("click", () =>
+      setNavOpen(!headerEl.classList.contains("is-nav-open")));
+
+    // picking a destination puts the menu away — including the Skill Tree,
+    // whose click is intercepted and opens an overlay instead of navigating
+    if (navEl) {
+      navEl.addEventListener("click", (e) => {
+        if (e.target.closest("a")) setNavOpen(false);
+      });
+    }
+
+    // The burger's own click is handled above and stops here rather than
+    // closing what it just opened, since the header contains the target.
+    document.addEventListener("click", (e) => {
+      if (!headerEl.contains(e.target)) setNavOpen(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setNavOpen(false);
+    });
+
+    // the panel doesn't exist on a wide screen, so don't leave the flag set
+    // behind on a rotation or a resized desktop window
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > NAV_BREAKPOINT) setNavOpen(false);
+    });
+  }
+
   /* ---- header account chip ---- */
 
   // Once a profile exists the chip shows the username rather than the email

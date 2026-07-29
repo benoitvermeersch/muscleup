@@ -215,6 +215,10 @@ ul { margin: 0; padding: 0; list-style: none; }
 .nav__links a:hover { color: var(--text); }
 .nav__links a.is-active { color: var(--text); }
 
+/* The menu button only exists once the links collapse — see the 900px
+   block further down, which is also where the panel itself is styled. */
+.nav__burger { display: none; }
+
 /* ---------- hero ---------- */
 
 .hero { padding: 88px 0 40px; }
@@ -590,7 +594,63 @@ ul { margin: 0; padding: 0; list-style: none; }
   .steps { grid-template-columns: repeat(2, 1fr); }
   .cards { grid-template-columns: repeat(2, 1fr); }
   .ai__grid { grid-template-columns: 1fr; }
-  .nav__links { display: none; }
+
+  /* ---- mobile navigation ----
+
+     The links don't fit beside the account chip on a phone, but hiding
+     them outright puts the Leaderboard, Profile and Skill Tree out of
+     reach. Below this width they drop out of the header as a panel behind
+     a menu button instead. The list is the same #nav-links renderNav
+     fills, so the menu follows the signed-in state for free. */
+
+  .nav__burger {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 40px;
+    height: 40px;
+    padding: 0 9px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--surface);
+    cursor: pointer;
+    flex: none;
+  }
+  .nav__burger span {
+    display: block;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--text);
+    transition: transform 0.18s ease, opacity 0.18s ease;
+  }
+  /* the three bars fold into a cross while the panel is down */
+  .is-nav-open .nav__burger span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .is-nav-open .nav__burger span:nth-child(2) { opacity: 0; }
+  .is-nav-open .nav__burger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* anchored to .site-header, which is sticky and so already positioned */
+  .nav__links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    padding: 4px 0 8px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  }
+  .site-header.is-nav-open .nav__links { display: flex; }
+
+  .nav__links a {
+    padding: 15px 24px;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav__links a:last-child { border-bottom: none; }
 }
 
 @media (max-width: 560px) {
@@ -600,6 +660,8 @@ ul { margin: 0; padding: 0; list-style: none; }
   .section { padding: 64px 0; }
   .hero__stats { gap: 22px; flex-wrap: wrap; }
   .join__form { flex-direction: column; }
+  /* keeps the menu's text on the same left edge as the tightened container */
+  .nav__links a { padding: 15px 16px; }
 }
 
 .nav__tools { display: flex; align-items: center; gap: 16px; }
