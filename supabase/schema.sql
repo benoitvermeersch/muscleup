@@ -14,6 +14,8 @@
 --     the leaderboard even before they fill the profile form in.
 --   * row-level security: anyone may read the board, but a row can only be
 --     written by the account that owns it.
+--   * an `avatars` storage bucket for profile pictures, with each athlete
+--     confined to a folder named after their own user id.
 --
 -- No email address is stored here. The table is world readable, and the
 -- leaderboard has no business handing out everyone's address.
@@ -24,6 +26,7 @@ create table if not exists public.profiles (
   username              text,          -- unique, case-insensitively (index below)
   first_name            text,
   last_name             text,
+  avatar_path           text,          -- object path inside the `avatars` bucket, "<id>/<file>"
 
   -- aggregates published by the browser as reps are logged
   total_reps            integer     not null default 0,
@@ -38,6 +41,10 @@ create table if not exists public.profiles (
 
 comment on table public.profiles is
   'Public athlete profile: one row per auth user, created on signup by handle_new_user().';
+
+-- `create table if not exists` leaves an existing table alone, so columns
+-- added after the first run need saying out loud
+alter table public.profiles add column if not exists avatar_path text;
 
 -- keep usernames case-insensitively unique ("Ben" must not sit next to "ben")
 create unique index if not exists profiles_username_lower_idx
@@ -62,6 +69,14 @@ alter table public.profiles drop constraint if exists profiles_total_reps_positi
 alter table public.profiles add constraint profiles_total_reps_positive
   check (total_reps >= 0);
 
+-- A profile picture is named by its path in the bucket, never by a full URL,
+-- and the path has to sit in the athlete's own folder. The board renders
+-- these as <img> for everyone, so an arbitrary URL here would be a way to
+-- point every viewer's browser at a server of your choosing.
+alter table public.profiles drop constraint if exists profiles_avatar_path_own_folder;
+alter table public.profiles add constraint profiles_avatar_path_own_folder
+  check (avatar_path is null or avatar_path ~ ('^' || id::text || '/[A-Za-z0-9._-]{1,80}$'));
+
 
 -- ---------------------------------------------------------------------
 -- Row-level security
@@ -85,6 +100,70 @@ create policy "Users update their own profile"
   with check (auth.uid() = id);
 
 -- no delete policy: a profile disappears only with its account
+
+
+-- ---------------------------------------------------------------------
+-- Profile pictures — the `avatars` bucket
+--
+-- Public to read (the leaderboard shows everyone's picture), writable only
+-- inside a folder named after your own user id. The size and mime limits
+-- are a backstop: the browser already crops and re-encodes every upload to
+-- a small square JPEG, but nothing stops someone calling the storage API
+-- directly, so the rules that matter are stated here too.
+--
+-- Storage lives in a schema owned by `supabase_storage_admin`. On projects
+-- where the SQL editor isn't allowed to touch it this block says so and
+-- carries on rather than failing the whole script — the bucket can then be
+-- made by hand under Storage → New bucket.
+-- ---------------------------------------------------------------------
+do $$
+begin
+  insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  values ('avatars', 'avatars', true, 2097152,
+          array['image/jpeg', 'image/png', 'image/webp'])
+  on conflict (id) do update
+    set public             = true,
+        file_size_limit    = excluded.file_size_limit,
+        allowed_mime_types = excluded.allowed_mime_types;
+
+  execute $p$drop policy if exists "Avatars are readable by everyone" on storage.objects$p$;
+  execute $p$create policy "Avatars are readable by everyone"
+    on storage.objects for select
+    using (bucket_id = 'avatars')$p$;
+
+  execute $p$drop policy if exists "Users upload their own avatar" on storage.objects$p$;
+  execute $p$create policy "Users upload their own avatar"
+    on storage.objects for insert to authenticated
+    with check (
+      bucket_id = 'avatars'
+      and (storage.foldername(name))[1] = auth.uid()::text
+    )$p$;
+
+  execute $p$drop policy if exists "Users replace their own avatar" on storage.objects$p$;
+  execute $p$create policy "Users replace their own avatar"
+    on storage.objects for update to authenticated
+    using (
+      bucket_id = 'avatars'
+      and (storage.foldername(name))[1] = auth.uid()::text
+    )$p$;
+
+  -- swapping a picture uploads the new one and removes the old, so deleting
+  -- inside your own folder has to be allowed
+  execute $p$drop policy if exists "Users delete their own avatar" on storage.objects$p$;
+  execute $p$create policy "Users delete their own avatar"
+    on storage.objects for delete to authenticated
+    using (
+      bucket_id = 'avatars'
+      and (storage.foldername(name))[1] = auth.uid()::text
+    )$p$;
+
+exception
+  when insufficient_privilege then
+    raise notice
+      'Skipped the avatars bucket: this project does not let the SQL editor '
+      'change storage. Create a PUBLIC bucket named "avatars" under Storage, '
+      'then add the four policies from this block to storage.objects.';
+end $$;
 
 
 -- ---------------------------------------------------------------------
@@ -157,6 +236,17 @@ begin
   if caller is null then
     raise exception 'Not signed in';
   end if;
+
+  -- storage isn't reached by the cascade, so the picture would outlive the
+  -- account that uploaded it
+  begin
+    delete from storage.objects
+     where bucket_id = 'avatars'
+       and (storage.foldername(name))[1] = caller::text;
+  exception
+    when insufficient_privilege or undefined_table then
+      raise notice 'Could not remove the stored avatar for %', caller;
+  end;
 
   delete from auth.users where id = caller;
 end;

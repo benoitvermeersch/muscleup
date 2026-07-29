@@ -32,14 +32,40 @@ rather than being merged into it.
 ## Your profile
 
 Signing up asks for an email and a password, nothing else. The name comes
-later, on **`profile.html`** — username, first name, last name, and that's
-it for now. The username is what other athletes see; the email never leaves
-your own screen.
+later, on **`profile.html`** — a picture, username, first name, last name,
+and that's it for now. The username is what other athletes see; the email
+never leaves your own screen.
 
 Usernames are 3–20 characters of letters, numbers and underscores, and are
 unique across the site (case-insensitively, so `Ben` and `ben` can't both
 exist). Until you set one, the leaderboard calls you `Athlete 1a2b` after
 the first characters of your account id.
+
+### Your picture
+
+The circle at the top of the form takes a photo — click it, use **Upload a
+picture**, or drop a file straight onto it. It saves on its own rather than
+waiting for **Save profile**, so a brand-new account doesn't need a
+username before it can have a face. **Remove** puts the initial back.
+
+Whatever you pick is cropped to a centred square and re-encoded to a 256px
+JPEG *in the browser*, before anything is uploaded. That keeps every avatar
+the same shape, keeps the upload to a few tens of KB however large the
+original was, and drops the metadata block a camera attaches — a photo off
+a phone carries the time and GPS coordinates it was taken at, and these are
+shown to everyone on the leaderboard.
+
+Remote mode puts the file in an `avatars` storage bucket under a folder
+named after your user id, and the profile row stores only that path — never
+a full URL. The board renders every athlete's picture as an `<img>`, so a
+row that could hold an arbitrary URL would be a way to point every viewer's
+browser at a server of someone else's choosing; a check constraint keeps
+the value inside your own folder. Local mode has no bucket, so the image
+lives in this browser instead.
+
+Your picture also replaces the initial in the header chip and on the
+leaderboard. If one ever fails to load, the letter underneath shows through
+rather than a broken-image icon.
 
 ## Danger zone
 
@@ -55,7 +81,9 @@ behind a confirmation:
 Supabase gives the browser no way to delete its own auth user — that sits
 behind the service-role key, which must never ship to a page — so the
 schema installs a `delete_own_account()` function that deletes only the
-caller's row and lets the cascade take the profile. It's granted to
+caller's row and lets the cascade take the profile. Storage sits outside
+that cascade, so the function clears the athlete's avatar folder itself
+rather than leaving the picture behind. It's granted to
 `authenticated` and revoked from `anon`. **Re-run `supabase/schema.sql`
 to add it**; until then, deleting says so rather than failing quietly.
 
@@ -193,6 +221,14 @@ which runs entirely from the browser. To switch it on:
    to it. No email address is stored there — the board is world readable,
    and it has no business handing out everyone's address.
 
+   The same script creates the public **`avatars`** storage bucket that
+   profile pictures go in, with policies confining each athlete to a folder
+   named after their user id. If your project doesn't let the SQL editor
+   touch storage, the script says so in a notice and carries on rather than
+   failing — create a public bucket called `avatars` under Storage by hand
+   and add the four policies from that block. Until the bucket exists,
+   uploading a picture explains what's missing instead of failing quietly.
+
 Either key format works: the legacy `anon` JWT (`eyJ...`) or the newer
 publishable key (`sb_publishable_...`). Both are meant to be public — they
 ship to the browser on every Supabase site, and row-level security is what
@@ -246,7 +282,7 @@ don't treat a local-mode account as protecting anything.
 ├── js/leaderboard.js     # the rankings table
 ├── js/tree-board.js      # the standings panel on the map
 ├── js/profile-page.js    # the profile form
-└── supabase/schema.sql   # profiles table, RLS and the signup trigger
+└── supabase/schema.sql   # profiles table, RLS, avatars bucket, signup trigger
 ```
 
 The sign up / log in dialog **and the header navigation** are built by

@@ -61,6 +61,31 @@
         <div class="pf-error" id="pf-error" role="alert"></div>
         <div class="pf-state" id="pf-state" role="status" hidden></div>
 
+        <!-- The picture saves on its own, not with the form: a new account
+             has no username yet, and needing one to set a photo would be a
+             strange gate to put in the way. -->
+        <div class="pf-field pf-avatar">
+          <span class="pf-label" id="pf-avatar-label">Profile picture</span>
+          <div class="pf-avatar__row">
+            <button type="button" class="pf-avatar__drop" id="pf-avatar-drop"
+                    aria-labelledby="pf-avatar-label">
+              <img class="pf-avatar__img" id="pf-avatar-img" alt="" hidden>
+              <span class="pf-avatar__initial" id="pf-avatar-initial" aria-hidden="true">?</span>
+              <span class="pf-avatar__over" aria-hidden="true">Change</span>
+            </button>
+
+            <div class="pf-avatar__side">
+              <input type="file" class="sr-only" id="pf-avatar-input"
+                     accept="image/jpeg,image/png,image/webp,image/gif,image/avif">
+              <div class="pf-avatar__buttons">
+                <label class="btn btn--ghost btn--small" for="pf-avatar-input" id="pf-avatar-pick">Upload a picture</label>
+                <button type="button" class="btn btn--ghost btn--small" id="pf-avatar-remove" hidden>Remove</button>
+              </div>
+              <span class="pf-hint" id="pf-avatar-hint">JPEG, PNG or WebP — or drop one on the circle. It's cropped to a square and saved on its own.</span>
+            </div>
+          </div>
+        </div>
+
         <div class="pf-field">
           <label for="pf-username">Username</label>
           <input type="text" id="pf-username" name="username" placeholder="pick_a_username"
@@ -98,7 +123,10 @@
       <aside class="pf-preview" aria-label="Leaderboard preview">
         <span class="pf-preview__tag">How you'll appear</span>
         <div class="pf-preview__card">
-          <span class="pf-preview__avatar" id="pf-preview-avatar" aria-hidden="true">?</span>
+          <span class="pf-preview__avatar" id="pf-preview-avatar" aria-hidden="true">
+            <img class="pf-preview__img" id="pf-preview-avatar-img" alt="" hidden>
+            <span id="pf-preview-avatar-initial">?</span>
+          </span>
           <span class="pf-preview__name" id="pf-preview-name">Athlete</span>
           <span class="pf-preview__full is-placeholder" id="pf-preview-full">Your name, once you fill it in</span>
         </div>

@@ -854,6 +854,17 @@ document.addEventListener("DOMContentLoaded", () => {
     return user.email;
   }
 
+  // the picture if one has been uploaded, otherwise the initial — the image
+  // sits over the letter so a failed load falls back on its own
+  function chipAvatar(name) {
+    const initial = escapeHtml(name.slice(0, 1).toUpperCase());
+    const profile = window.MuProfiles && window.MuProfiles.mine();
+    const url = profile && profile.avatarUrl;
+    return url
+      ? `${initial}<img src="${escapeHtml(url)}" alt="" decoding="async">`
+      : initial;
+  }
+
   function renderAuthSlot(user) {
     if (!authSlot) return;
     if (user) {
@@ -861,7 +872,7 @@ document.addEventListener("DOMContentLoaded", () => {
       authSlot.innerHTML =
         `<div class="account">` +
         `<a class="account__me" href="profile.html" title="Edit your profile">` +
-        `<span class="account__avatar">${escapeHtml(name.slice(0, 1).toUpperCase())}</span>` +
+        `<span class="account__avatar">${chipAvatar(name)}</span>` +
         `<span class="account__email">${escapeHtml(name)}</span></a>` +
         `<button type="button" class="account__out" id="auth-logout">Log out</button>` +
         `</div>`;

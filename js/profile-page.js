@@ -21,9 +21,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const emailEl = document.getElementById("pf-email");
   const previewName = document.getElementById("pf-preview-name");
   const previewFull = document.getElementById("pf-preview-full");
-  const previewAvatar = document.getElementById("pf-preview-avatar");
   const previewStats = document.getElementById("pf-preview-stats");
   const submitBtn = form.querySelector('button[type="submit"]');
+
+  const avatarImg = document.getElementById("pf-avatar-img");
+  const avatarInitial = document.getElementById("pf-avatar-initial");
+  const avatarInput = document.getElementById("pf-avatar-input");
+  const avatarPick = document.getElementById("pf-avatar-pick");
+  const avatarDrop = document.getElementById("pf-avatar-drop");
+  const avatarRemove = document.getElementById("pf-avatar-remove");
+  const avatarHint = document.getElementById("pf-avatar-hint");
+  const previewImg = document.getElementById("pf-preview-avatar-img");
+  const previewInitial = document.getElementById("pf-preview-avatar-initial");
 
   function esc(value) {
     return String(value)
@@ -52,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const name = window.MuProfiles.displayName(draft);
     const full = window.MuProfiles.fullName(draft);
 
-    previewAvatar.textContent = name.slice(0, 1).toUpperCase();
+    renderAvatar(name);
     previewName.textContent = name;
     previewFull.textContent = full || "Your name, once you fill it in";
     previewFull.classList.toggle("is-placeholder", !full);
@@ -64,6 +73,133 @@ document.addEventListener("DOMContentLoaded", () => {
       `<div class="pf-mini"><span>${top ? esc(top.icon + " " + top.label) : "—"}</span><small>top branch</small></div>` +
       `<div class="pf-mini"><span>${stats.favouriteSkillLabel ? esc(stats.favouriteSkillLabel) : "—"}</span>` +
         `<small>favourite position</small></div>`;
+  }
+
+  /* ---- the profile picture ----
+
+     Both circles — the one in the form and the one on the preview card —
+     show the same thing: your picture if there is one, your initial if
+     there isn't.  */
+
+  // a URL that has already failed once — the file was deleted from the
+  // bucket, or the network is down — shouldn't be retried on every keystroke
+  const broken = new Set();
+
+  function paintCircle(img, letter, url, initial) {
+    if (!img || !letter) return;
+    letter.textContent = initial;
+
+    if (url && !broken.has(url)) {
+      // only when it actually changed, or every keystroke in the username
+      // field would start the image loading again
+      if (img.getAttribute("src") !== url) img.src = url;
+      img.hidden = false;
+      letter.hidden = true;
+    } else {
+      img.removeAttribute("src");
+      img.hidden = true;
+      letter.hidden = false;
+    }
+  }
+
+  [avatarImg, previewImg].forEach((img) => {
+    if (!img) return;
+    img.addEventListener("error", () => {
+      const src = img.getAttribute("src");
+      if (!src) return;
+      broken.add(src);
+      renderPreview();
+    });
+  });
+
+  function renderAvatar(name) {
+    const profile = window.MuProfiles.mine();
+    const url = (profile && profile.avatarUrl) || "";
+    const initial = name.slice(0, 1).toUpperCase();
+
+    paintCircle(avatarImg, avatarInitial, url, initial);
+    paintCircle(previewImg, previewInitial, url, initial);
+
+    if (avatarRemove) avatarRemove.hidden = !url;
+    if (avatarDrop) avatarDrop.classList.toggle("has-image", Boolean(url));
+  }
+
+  const AVATAR_HINT = avatarHint ? avatarHint.textContent : "";
+  let avatarBusy = false;
+
+  function showAvatarNote(message, kind) {
+    if (!avatarHint) return;
+    avatarHint.textContent = message || AVATAR_HINT;
+    avatarHint.className = `pf-hint${kind ? ` is-${kind}` : ""}`;
+  }
+
+  function setAvatarBusy(busy) {
+    avatarBusy = busy;
+    if (avatarInput) avatarInput.disabled = busy;
+    if (avatarRemove) avatarRemove.disabled = busy;
+    // a <label> has no disabled state of its own — CSS stops the clicks
+    if (avatarPick) avatarPick.classList.toggle("is-disabled", busy);
+    if (avatarDrop) {
+      avatarDrop.classList.toggle("is-busy", busy);
+      avatarDrop.disabled = busy;
+    }
+  }
+
+  async function useFile(file) {
+    if (!file || avatarBusy) return;
+    setAvatarBusy(true);
+    showAvatarNote("Uploading…");
+    try {
+      await window.MuProfiles.saveAvatar(file);
+      showAvatarNote("Picture saved — that's your face on the leaderboard now.", "ok");
+    } catch (err) {
+      showAvatarNote(err.message, "error");
+    } finally {
+      setAvatarBusy(false);
+      // picking the same file twice has to fire `change` again
+      if (avatarInput) avatarInput.value = "";
+    }
+  }
+
+  if (avatarInput) {
+    avatarInput.addEventListener("change", () => useFile(avatarInput.files[0]));
+  }
+
+  if (avatarDrop) {
+    avatarDrop.addEventListener("click", () => {
+      if (!avatarBusy && avatarInput) avatarInput.click();
+    });
+
+    ["dragenter", "dragover"].forEach((type) =>
+      avatarDrop.addEventListener(type, (e) => {
+        e.preventDefault();
+        if (!avatarBusy) avatarDrop.classList.add("is-over");
+      }));
+
+    ["dragleave", "dragend", "drop"].forEach((type) =>
+      avatarDrop.addEventListener(type, () => avatarDrop.classList.remove("is-over")));
+
+    avatarDrop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if (files && files.length) useFile(files[0]);
+    });
+  }
+
+  if (avatarRemove) {
+    avatarRemove.addEventListener("click", async () => {
+      if (avatarBusy) return;
+      setAvatarBusy(true);
+      showAvatarNote("Removing…");
+      try {
+        await window.MuProfiles.removeAvatar();
+        showAvatarNote("Picture removed — back to your initial.", "ok");
+      } catch (err) {
+        showAvatarNote(err.message, "error");
+      } finally {
+        setAvatarBusy(false);
+      }
+    });
   }
 
   /* ---- have you actually saved anything? ---- */

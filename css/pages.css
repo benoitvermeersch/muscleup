@@ -155,6 +155,17 @@
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.9rem;
+  overflow: hidden;
+  position: relative;
+}
+/* Laid over the initial rather than replacing it, so a picture that fails to
+   load (deleted from the bucket, offline) quietly falls back to the letter. */
+.lb-avatar__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .lb-names { display: flex; flex-direction: column; min-width: 0; }
 .lb-name {
@@ -280,8 +291,96 @@
 }
 .pf-field input:focus { outline: none; border-color: var(--lime-dim); }
 .pf-hint { font-size: 0.74rem; color: var(--text-faint); line-height: 1.4; }
+.pf-hint.is-ok { color: var(--lime); }
+.pf-hint.is-error { color: #ff8b80; }
 
 .pf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* ---------- profile picture ---------- */
+
+.pf-avatar__row { display: flex; align-items: center; gap: 18px; }
+
+/* the circle doubles as the drop target and the file-picker button */
+.pf-avatar__drop {
+  position: relative;
+  flex: none;
+  width: 88px;
+  height: 88px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px dashed var(--border);
+  background: var(--surface-2);
+  color: var(--text-faint);
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.pf-avatar__drop:hover,
+.pf-avatar__drop:focus-visible { border-color: var(--lime-dim); outline: none; }
+.pf-avatar__drop.is-over {
+  border-color: var(--lime);
+  border-style: solid;
+  transform: scale(1.03);
+}
+.pf-avatar__drop.has-image { border-style: solid; border-color: var(--border); }
+.pf-avatar__drop.is-busy { opacity: 0.55; cursor: progress; }
+
+.pf-avatar__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* A `display` of our own outranks the browser's [hidden] rule, so anything
+   this page hides by attribute has to say so again here. */
+.pf-avatar__img[hidden],
+.pf-avatar__initial[hidden],
+.pf-preview__img[hidden],
+.pf-avatar__buttons .btn[hidden] { display: none; }
+
+.pf-avatar__initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  color: #0a0d12;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+}
+
+/* "Change" sits over the picture on hover — pointless when there isn't one */
+.pf-avatar__over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 13, 18, 0.62);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.78rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.pf-avatar__drop.has-image:hover .pf-avatar__over,
+.pf-avatar__drop.has-image:focus-visible .pf-avatar__over { opacity: 1; }
+
+.pf-avatar__side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pf-avatar__buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.pf-avatar__buttons .btn { cursor: pointer; }
+.pf-avatar__buttons .btn.is-disabled { opacity: 0.45; pointer-events: none; }
+.pf-avatar__buttons .btn:disabled { opacity: 0.45; pointer-events: none; }
+
+/* keyboard focus on the visually hidden file input has to show up somewhere */
+#pf-avatar-input:focus-visible + .pf-avatar__buttons #pf-avatar-pick {
+  border-color: var(--lime);
+  color: var(--lime);
+}
 
 .pf-field--static { gap: 4px; }
 .pf-static { font-size: 0.92rem; color: var(--text); }
@@ -336,7 +435,9 @@
   font-weight: 700;
   font-size: 1.3rem;
   margin-bottom: 4px;
+  overflow: hidden;
 }
+.pf-preview__img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pf-preview__name {
   font-family: var(--font-display);
   font-weight: 700;

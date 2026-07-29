@@ -38,6 +38,17 @@ document.addEventListener("DOMContentLoaded", () => {
       `<span class="lb-chip__icon" aria-hidden="true">${cat.icon}</span>${esc(cat.label)}</span>`;
   }
 
+  /* ---- the athlete's picture, or the initial they started with ---- */
+  function avatar(profile, name) {
+    const initial = esc(name.slice(0, 1).toUpperCase());
+    if (!profile.avatarUrl) return initial;
+    // the letter stays behind the image, so a picture that 404s still leaves
+    // a sensible circle rather than a broken-image icon
+    return initial +
+      `<img class="lb-avatar__img" src="${esc(profile.avatarUrl)}" alt="" ` +
+      `loading="lazy" decoding="async">`;
+  }
+
   function favouriteCell(profile) {
     if (!profile.favouriteSkillLabel) {
       return `<span class="lb-fav lb-fav--none">Nothing starred yet</span>`;
@@ -62,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return `<tr class="lb-row${isMe ? " is-me" : ""}">` +
       `<td class="lb-rank">${medal ? `<span class="lb-medal">${medal}</span>` : `<span>${rank}</span>`}</td>` +
       `<td class="lb-athlete">` +
-        `<span class="lb-avatar" aria-hidden="true">${esc(name.slice(0, 1).toUpperCase())}</span>` +
+        `<span class="lb-avatar" aria-hidden="true">${avatar(profile, name)}</span>` +
         `<span class="lb-names">` +
           `<span class="lb-name">${esc(name)}${isMe ? `<span class="lb-you">You</span>` : ""}</span>` +
           (full && full !== name ? `<span class="lb-fullname">${esc(full)}</span>` : "") +
