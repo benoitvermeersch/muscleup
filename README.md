@@ -85,6 +85,26 @@ the ones who have trained — ranked by total reps. Each row shows:
   most of those reps
 - **Favourite position** — the one skill you've starred
 
+### Rep limits
+
+You can log at most **2,000 reps at a time**. It isn't only about plausible
+sets: a number large enough to overflow a double becomes `Infinity`,
+`JSON.stringify` writes that as `null`, and the published total hits a NOT
+NULL integer column — one bad entry would otherwise block every later
+publish for that account.
+
+The cap is enforced in four places, so no route around the form helps:
+
+- the input carries `max` and pulls an over-long number back as you type
+- `addRepsTo` clamps whatever it's handed and returns what it credited, so
+  the popup can say a number was trimmed rather than banking a different
+  one silently
+- totals are capped per skill, and again at the Postgres integer ceiling
+  before being published
+- counts already in a browser are repaired on load — anything unreadable
+  or above the per-skill ceiling (which adding can't produce) is treated as
+  overflow and dropped rather than parked at the top of the leaderboard
+
 ### Favouriting a position
 
 Open any skill in the tree and hit **Make this my favourite**. The node

@@ -82,7 +82,7 @@ function initWaitlist() {
 const {
   FAMILY, CATEGORIES, RANKS, REPS_PER_RANK, UNLOCK_REPS, STARTERS,
   repsOf, addRepsTo, setRepsTo, rankIndex, isUnlocked,
-  isFavourite, toggleFavourite,
+  isFavourite, toggleFavourite, MAX_REPS_PER_ENTRY,
 } = window.MuSkills;
 
 /* ---------------------------------------------------------------------
@@ -646,7 +646,7 @@ function initSkillTree() {
     const node = cat && cat.nodes.find((n) => n.id === id);
     return { cat, node };
   }
-  function openPopup(key) {
+  function openPopup(key, notice) {
     const { cat, node } = nodeByKey(key);
     if (!cat || !node) return;
     const f = fam(node);
@@ -687,11 +687,14 @@ function initSkillTree() {
         (isMax ? `Mastered — every skill in this line is open to you.`
                : `${into} / ${REPS_PER_RANK} reps to <b>${RANKS[ri + 1]}</b>`) + `</div>`;
       html += `<div class="pop-add">` +
-        `<input id="pop-add-input" type="number" min="1" step="1" value="10" inputmode="numeric" aria-label="Reps to add">` +
+        `<input id="pop-add-input" type="number" min="1" step="1" max="${MAX_REPS_PER_ENTRY}" ` +
+        `value="10" inputmode="numeric" aria-label="Reps to add">` +
         `<button id="pop-add-btn" class="btn btn--primary">Add reps</button></div>`;
       html += `<div class="pop-quick">` +
         [5, 10, 25, 50].map((q) => `<button class="pop-quick__b" data-q="${q}">+${q}</button>`).join("") + `</div>`;
-      html += `<p class="pop-note">Every ${REPS_PER_RANK} reps earns the next rank. Hit Novice to unlock the skill above this one.</p>`;
+      if (notice) html += `<p class="pop-warn">${esc(notice)}</p>`;
+      html += `<p class="pop-note">Every ${REPS_PER_RANK} reps earns the next rank, and you can log up to ` +
+        `${MAX_REPS_PER_ENTRY.toLocaleString()} reps at a time. Hit Novice to unlock the skill above this one.</p>`;
     }
 
     popBody.innerHTML = html;
@@ -708,17 +711,32 @@ function initSkillTree() {
       });
     }
 
-    const doAdd = (n) => {
-      if (!n || n <= 0) return;
-      addRepsTo(cat.key, node.id, n);
+    const doAdd = (value) => {
+      const wanted = Math.floor(Number(value));
+      if (!Number.isFinite(wanted) || wanted <= 0) {
+        return openPopup(key, "Enter how many reps you did.");
+      }
+
+      const added = addRepsTo(cat.key, node.id, wanted);
       build(); layoutWheel();        // reflect new unlocks / ranks
-      openPopup(key);                // refresh popup contents
+
+      // say so rather than silently banking a different number
+      const capped = added < wanted
+        ? `That's more than a set — logged ${added.toLocaleString()} reps, the most allowed at a time.`
+        : "";
+      openPopup(key, capped);        // refresh popup contents
     };
     const addBtn = document.getElementById("pop-add-btn");
     if (addBtn) {
-      addBtn.addEventListener("click", () => doAdd(parseInt(document.getElementById("pop-add-input").value, 10)));
-      document.getElementById("pop-add-input").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") doAdd(parseInt(e.target.value, 10));
+      const input = document.getElementById("pop-add-input");
+      addBtn.addEventListener("click", () => doAdd(input.value));
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doAdd(e.target.value);
+      });
+      // pull an over-long number back into range as it's typed
+      input.addEventListener("input", () => {
+        const n = Math.floor(Number(input.value));
+        if (Number.isFinite(n) && n > MAX_REPS_PER_ENTRY) input.value = String(MAX_REPS_PER_ENTRY);
       });
       popBody.querySelectorAll(".pop-quick__b").forEach((b) =>
         b.addEventListener("click", () => doAdd(parseInt(b.dataset.q, 10))));

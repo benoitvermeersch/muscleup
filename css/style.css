@@ -990,6 +990,18 @@ ul { margin: 0; padding: 0; list-style: none; }
 .pop-quick__b:hover { border-color: var(--lime-dim); color: var(--text); }
 .pop-note { font-size: 0.74rem; color: var(--text-faint); margin-top: 14px; line-height: 1.4; }
 
+/* shown when an entry was clamped, so a changed number is never silent */
+.pop-warn {
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: rgba(255, 210, 78, 0.10);
+  border: 1px solid rgba(255, 210, 78, 0.32);
+  color: #ffd24e;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .pop-locked { text-align: center; margin-top: 6px; }
 .pop-lock-ico { color: var(--text-faint); margin: 4px 0 10px; }
 .pop-lock-ico .lock-ico { width: 40px; height: 40px; margin: 0 auto; }

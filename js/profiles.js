@@ -39,6 +39,7 @@
   const USERS_KEY = "mu-users";
 
   const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
+  const INT4_MAX = 2147483647;   // the ceiling on a Postgres integer column
 
   const COLUMNS =
     "id,username,first_name,last_name,total_reps,category_reps,top_category," +
@@ -64,6 +65,22 @@
     return user ? user.id : null;
   };
 
+  // Nothing non-numeric reaches the database. An Infinity here would be
+  // written by JSON.stringify as `null`, which a NOT NULL integer column
+  // rejects outright — one bad entry would otherwise stop every later
+  // publish for that account.
+  function safeInt(value) {
+    const n = Math.floor(Number(value));
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return Math.min(n, INT4_MAX);
+  }
+
+  function safeCounts(counts) {
+    const clean = {};
+    Object.keys(counts || {}).forEach((key) => { clean[key] = safeInt(counts[key]); });
+    return clean;
+  }
+
   /* ------------------------------------------------------------------
      Shape coming out of either backend
      ------------------------------------------------------------------ */
@@ -74,7 +91,7 @@
       username: row.username || null,
       firstName: row.first_name || null,
       lastName: row.last_name || null,
-      totalReps: Number(row.total_reps) || 0,
+      totalReps: safeInt(row.total_reps),
       categoryReps: row.category_reps || {},
       topCategory: row.top_category || null,
       favouriteSkill: row.favourite_skill || null,
@@ -323,8 +340,8 @@
         username,
         first_name: firstName,
         last_name: lastName,
-        total_reps: stats.totalReps,
-        category_reps: stats.categoryReps,
+        total_reps: safeInt(stats.totalReps),
+        category_reps: safeCounts(stats.categoryReps),
         top_category: stats.topCategory,
         favourite_skill: stats.favouriteSkill,
         favourite_skill_label: stats.favouriteSkillLabel,
@@ -369,8 +386,8 @@
     const stats = global.MuSkills.stats();
     const row = {
       id,
-      total_reps: stats.totalReps,
-      category_reps: stats.categoryReps,
+      total_reps: safeInt(stats.totalReps),
+      category_reps: safeCounts(stats.categoryReps),
       top_category: stats.topCategory,
       favourite_skill: stats.favouriteSkill,
       favourite_skill_label: stats.favouriteSkillLabel,

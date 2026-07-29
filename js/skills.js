@@ -248,6 +248,27 @@
   const REPS_PER_RANK = 200;
   const UNLOCK_REPS = 200;
 
+  /* ------------------------------------------------------------------
+     Limits
+
+     A set of 2,000 is already an absurd session, and anything past it is
+     either a typo or someone poking at the form. It matters more than
+     vanity: a number big enough to overflow a double becomes Infinity,
+     JSON.stringify writes that as `null`, and the published total lands in
+     Postgres as a null against a NOT NULL integer column. Clamp at the
+     door and every layer behind it stays honest.
+     ------------------------------------------------------------------ */
+  const MAX_REPS_PER_ENTRY = 2000;      // one press of "Add reps"
+  const MAX_REPS_PER_SKILL = 1000000;   // lifetime on a single skill
+  const INT4_MAX = 2147483647;          // what a Postgres integer holds
+
+  // any input → a whole, finite, non-negative number no larger than `max`
+  function clamp(value, max) {
+    const n = Math.floor(Number(value));
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return Math.min(n, max);
+  }
+
   // First-run check-in: the ground-floor skill of each line. Ticking one
   // credits it with UNLOCK_REPS, which opens everything sitting above it.
   const STARTERS = [
@@ -306,8 +327,27 @@
   let repsState = {};
   let favourite = null;
 
+  // A browser holding a bad number from before the cap existed is repaired
+  // on the next load rather than poisoning every total from then on. A count
+  // *above* the per-skill ceiling can't have been reached through the UI —
+  // adding clamps there — so it's overflow or tampering, and gets dropped
+  // rather than parked at the ceiling where it would top the board forever.
+  function sanitise(raw) {
+    const clean = {};
+    let changed = false;
+    Object.keys(raw || {}).forEach((key) => {
+      const stored = raw[key];
+      const value = Number(stored) > MAX_REPS_PER_SKILL ? 0 : clamp(stored, MAX_REPS_PER_SKILL);
+      if (value !== stored) changed = true;
+      if (value > 0) clean[key] = value;
+    });
+    return { clean, changed };
+  }
+
   function loadState() {
-    repsState = readJSON(scoped(REPS_BASE), {}) || {};
+    const { clean, changed } = sanitise(readJSON(scoped(REPS_BASE), {}) || {});
+    repsState = clean;
+    if (changed) saveReps();
     try { favourite = localStorage.getItem(scoped(FAV_BASE)) || null; } catch (err) { favourite = null; }
   }
   loadState();
@@ -332,17 +372,26 @@
      ------------------------------------------------------------------ */
   function repsOf(catKey, id) { return repsState[`${catKey}:${id}`] || 0; }
 
+  // Returns how many reps were actually credited, which is less than asked
+  // for when the entry cap bites — the popup uses it to say so.
   function addRepsTo(catKey, id, n) {
+    const add = clamp(n, MAX_REPS_PER_ENTRY);
+    if (!add) return 0;
+
     const k = `${catKey}:${id}`;
-    repsState[k] = Math.max(0, (repsState[k] || 0) + n);
+    repsState[k] = clamp((repsState[k] || 0) + add, MAX_REPS_PER_SKILL);
     saveReps();
     emit("reps");
+    return add;
   }
 
   function setRepsTo(catKey, id, n) {
-    repsState[`${catKey}:${id}`] = Math.max(0, n);
+    const value = clamp(n, MAX_REPS_PER_SKILL);
+    if (value > 0) repsState[`${catKey}:${id}`] = value;
+    else delete repsState[`${catKey}:${id}`];
     saveReps();
     emit("reps");
+    return value;
   }
 
   function rankIndex(reps) { return Math.min(RANKS.length - 1, Math.floor(reps / REPS_PER_RANK)); }
@@ -412,10 +461,12 @@
 
     CATEGORIES.forEach((cat) => {
       let sum = 0;
-      cat.nodes.forEach((n) => { sum += reps[`${cat.key}:${n.id}`] || 0; });
-      categoryReps[cat.key] = sum;
+      cat.nodes.forEach((n) => { sum += clamp(reps[`${cat.key}:${n.id}`], MAX_REPS_PER_SKILL); });
+      categoryReps[cat.key] = Math.min(sum, INT4_MAX);
       totalReps += sum;
     });
+    // last gate before these numbers are published to an integer column
+    totalReps = Math.min(totalReps, INT4_MAX);
 
     // the branch with the most reps; nothing logged yet → no branch
     let topCategory = null;
@@ -455,6 +506,7 @@
     REPS_PER_RANK,
     UNLOCK_REPS,
     STARTERS,
+    MAX_REPS_PER_ENTRY,
     categoryByKey,
     skillByKey,
     skillLabel,
