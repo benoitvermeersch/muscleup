@@ -5,8 +5,30 @@
 document.addEventListener("DOMContentLoaded", () => {
   initWaitlist();
   initJoinSection();
+  initUserCount();
   initSkillTree();
 });
+
+/* ---------------------------------------------------------------------
+   "X Active Users" in the hero. Starts hidden and only appears once a
+   real number comes back — an empty or unreachable board should say
+   nothing rather than boast about zero athletes.
+   --------------------------------------------------------------------- */
+function initUserCount() {
+  const block = document.getElementById("stat-users-block");
+  const value = document.getElementById("stat-users");
+  const label = document.getElementById("stat-users-label");
+  if (!block || !value || !window.MuProfiles) return;
+
+  window.MuProfiles.count()
+    .then((total) => {
+      if (!total) return;
+      value.textContent = total.toLocaleString();
+      label.textContent = total === 1 ? "Active User" : "Active Users";
+      block.hidden = false;
+    })
+    .catch((err) => console.warn("[MuscleUp] user count unavailable:", err.message));
+}
 
 /* ---------------------------------------------------------------------
    The "create your account" section is only useful to signed-out

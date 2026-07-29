@@ -65,6 +65,16 @@ to add it**; until then, deleting says so rather than failing quietly.
 last link in the header either way — signed out and signed in — so it sits
 in the same place whatever state you're in.
 
+### Active users on the landing page
+
+The hero's fourth stat is the number of registered athletes, read from the
+`profiles` table. It asks PostgREST to count the rows and return none of
+them (`Prefer: count=exact`, `Range: 0-0`) rather than downloading the
+table to measure it, and falls back to counting a plain list if the
+`Content-Range` header isn't exposed. The stat starts hidden and only
+appears once a real number arrives, so an empty or unreachable board says
+nothing rather than advertising zero.
+
 ## The leaderboard
 
 **`leaderboard.html`** lists **every account ever registered** — not just

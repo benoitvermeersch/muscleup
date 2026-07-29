@@ -461,6 +461,35 @@
   }
 
   /* ------------------------------------------------------------------
+     How many athletes there are
+
+     The landing page only wants the number, so ask PostgREST to count the
+     rows and send none of them back, rather than downloading the whole
+     table to measure its length.
+     ------------------------------------------------------------------ */
+  async function count() {
+    if (!REMOTE) return localAccounts().length;
+
+    const res = await fetch(SB_URL + "/rest/v1/profiles?select=id", {
+      headers: { apikey: SB_KEY, Prefer: "count=exact", Range: "0-0" },
+    });
+
+    if (!res.ok) {
+      let payload = null;
+      try { payload = await res.json(); } catch (err) {}
+      throw restError(payload, res.status);
+    }
+
+    // "0-0/12" — the total is the part after the slash
+    const total = parseInt(String(res.headers.get("content-range") || "").split("/")[1], 10);
+    if (Number.isFinite(total)) return total;
+
+    // header not exposed by CORS — fall back to counting what we're given
+    const rows = await list();
+    return rows.length;
+  }
+
+  /* ------------------------------------------------------------------
      Keeping the published stats in step with the tree
      ------------------------------------------------------------------ */
   let pushTimer = 0;
@@ -507,6 +536,7 @@
     load,
     save,
     list,
+    count,
     pushStats,
     deleteAccount,
     displayName,

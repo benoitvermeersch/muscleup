@@ -285,6 +285,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   border-top: 1px solid var(--border);
 }
 .stat { display: flex; flex-direction: column; gap: 2px; }
+.stat[hidden] { display: none; }
 .stat strong { font-family: var(--font-display); font-size: 1.4rem; color: var(--text); }
 .stat span { font-size: 0.8rem; color: var(--text-faint); }
 
