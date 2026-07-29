@@ -135,3 +135,34 @@ create trigger profiles_touch_updated_at
 insert into public.profiles (id)
 select id from auth.users
 on conflict (id) do nothing;
+
+
+-- ---------------------------------------------------------------------
+-- Letting an athlete close their own account
+--
+-- Supabase gives the browser no way to delete its own auth user: that sits
+-- behind the service-role key, which must never ship to a page. This
+-- function runs as its owner but deletes *only* the caller's own row, and
+-- the profiles cascade takes the profile with it.
+-- ---------------------------------------------------------------------
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  caller uuid := auth.uid();
+begin
+  if caller is null then
+    raise exception 'Not signed in';
+  end if;
+
+  delete from auth.users where id = caller;
+end;
+$$;
+
+-- signed-in callers only; never the anonymous key
+revoke all on function public.delete_own_account() from public;
+revoke all on function public.delete_own_account() from anon;
+grant execute on function public.delete_own_account() to authenticated;

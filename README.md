@@ -4,12 +4,13 @@
 
 A skill tree to help you unlock calisthenics, isometrics and strengthen your body, with AI guidance along the way.
 
-MuscleUp turns bodyweight training into an RPG-style skill tree, split into four branches:
+MuscleUp turns bodyweight training into an RPG-style skill tree, split into five branches:
 
 - **Push** — push-ups, dips, handstands, planche
 - **Pull** — rows, pull-ups, front lever, muscle-up
 - **Legs** — squats, lunges, pistol squats, shrimp squats
 - **Core** — plank, hollow body, L-sit, dragon flag
+- **Cardio** — jumping jacks, burpees, jump rope, sprints
 
 Each move is a node you unlock as you progress, Duolingo-style, with AI guidance recommending what to train next.
 
@@ -39,6 +40,30 @@ Usernames are 3–20 characters of letters, numbers and underscores, and are
 unique across the site (case-insensitively, so `Ben` and `ben` can't both
 exist). Until you set one, the leaderboard calls you `Athlete 1a2b` after
 the first characters of your account id.
+
+## Danger zone
+
+The bottom of the profile page holds the two irreversible things, both
+behind a confirmation:
+
+- **Reset my tree** clears every rep, the favourite and the first-run
+  check-in, then publishes the zeroes so the leaderboard agrees. The
+  account and username survive.
+- **Delete my account** takes the account, the profile row and everything
+  this browser stored, and needs you to type DELETE first.
+
+Supabase gives the browser no way to delete its own auth user — that sits
+behind the service-role key, which must never ship to a page — so the
+schema installs a `delete_own_account()` function that deletes only the
+caller's row and lets the cascade take the profile. It's granted to
+`authenticated` and revoked from `anon`. **Re-run `supabase/schema.sql`
+to add it**; until then, deleting says so rather than failing quietly.
+
+## Contact
+
+**`contact.html`** is the page behind the signed-out nav: who's building
+this and how to reach them. Signed in, the nav is the app instead, but the
+page stays reachable by URL.
 
 ## The leaderboard
 
@@ -154,7 +179,8 @@ don't treat a local-mode account as protecting anything.
 .
 ├── index.html            # landing page + skill-tree overlay
 ├── leaderboard.html      # every registered athlete, ranked
-├── profile.html          # username / first name / last name
+├── profile.html          # username / first name / last name + danger zone
+├── contact.html          # who builds this
 ├── assets/logo.svg       # the mark, white on transparent
 ├── assets/favicon.svg    # the mark on a dark rounded tile
 ├── css/style.css         # landing page + skill tree styles
@@ -175,7 +201,7 @@ The sign up / log in dialog **and the header navigation** are built by
 `js/auth.js` rather than written into each page, so a page picks both up
 just by loading that script and putting an `#auth-slot` and an empty
 `#nav-links` in its header. That's also what keeps the nav identical
-everywhere: signed out it's How It Works / Skill Tree / AI Coach, and
+everywhere: signed out it's How It Works / Skill Tree / AI Coach / Contact, and
 signed in it's Home / Skill Tree / Leaderboard / Profile — the links don't
 shuffle as you move between pages.
 

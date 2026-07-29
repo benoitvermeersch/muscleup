@@ -128,6 +128,82 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  /* ---- danger zone ---- */
+  const dangerNote = document.getElementById("pf-danger-note");
+  const confirms = {
+    reset: document.getElementById("pf-reset-confirm"),
+    delete: document.getElementById("pf-delete-confirm"),
+  };
+
+  function showDanger(message, kind) {
+    if (!dangerNote) return;
+    dangerNote.textContent = message || "";
+    dangerNote.className = `pf-danger__note${kind ? ` is-${kind}` : ""}`;
+  }
+
+  // only one confirmation open at a time, so a stray click can't hit the
+  // wrong one
+  function openConfirm(which) {
+    Object.keys(confirms).forEach((key) => {
+      if (confirms[key]) confirms[key].hidden = key !== which;
+    });
+    showDanger("");
+    if (which === "reset") {
+      document.getElementById("pf-reset-count").textContent =
+        window.MuSkills.stats().totalReps.toLocaleString();
+    }
+    if (which === "delete") {
+      const input = document.getElementById("pf-delete-input");
+      input.value = "";
+      document.getElementById("pf-delete-go").disabled = true;
+      input.focus();
+    }
+  }
+
+  function closeConfirms() {
+    Object.keys(confirms).forEach((key) => { if (confirms[key]) confirms[key].hidden = true; });
+  }
+
+  if (dangerNote) {
+    document.getElementById("pf-reset").addEventListener("click", () => openConfirm("reset"));
+    document.getElementById("pf-delete").addEventListener("click", () => openConfirm("delete"));
+    document.querySelectorAll("[data-danger-cancel]").forEach((el) =>
+      el.addEventListener("click", closeConfirms));
+
+    // deleting an account is worth typing for
+    const deleteInput = document.getElementById("pf-delete-input");
+    const deleteGo = document.getElementById("pf-delete-go");
+    deleteInput.addEventListener("input", () => {
+      deleteGo.disabled = deleteInput.value.trim().toUpperCase() !== "DELETE";
+    });
+
+    document.getElementById("pf-reset-go").addEventListener("click", async () => {
+      closeConfirms();
+      window.MuSkills.resetTree();
+      renderPreview();
+      try {
+        await window.MuProfiles.pushStats();
+        showDanger("Tree reset — you're back at zero reps.", "ok");
+      } catch (err) {
+        showDanger(`Tree reset on this device, but the leaderboard wasn't updated: ${err.message}`, "error");
+      }
+    });
+
+    deleteGo.addEventListener("click", async () => {
+      deleteGo.disabled = true;
+      deleteGo.textContent = "Deleting…";
+      try {
+        await window.MuProfiles.deleteAccount();
+        // the account is gone; there's nothing left on this page to show
+        location.href = "index.html";
+      } catch (err) {
+        deleteGo.disabled = false;
+        deleteGo.textContent = "Delete permanently";
+        showDanger(err.message, "error");
+      }
+    });
+  }
+
   window.MuAuth.onChange(() => fill(window.MuProfiles.mine()));
   window.MuProfiles.onChange((profile) => fill(profile));
   window.MuSkills.onChange(renderPreview);

@@ -286,6 +286,7 @@
      ------------------------------------------------------------------ */
   const REPS_BASE = "mu-reps";
   const FAV_BASE = "mu-favourite";
+  const ASSESSED_BASE = "mu-assessed";   // the first-run check-in flag
 
   function scoped(base, userId) {
     if (userId) return `${base}:${userId}`;
@@ -373,6 +374,36 @@
   }
 
   /* ------------------------------------------------------------------
+     Starting over
+     ------------------------------------------------------------------ */
+
+  // Back to an empty tree: no reps, no favourite, and the first-run
+  // check-in offered again next time the map opens. The account stays.
+  function resetTree() {
+    repsState = {};
+    favourite = null;
+    try {
+      localStorage.removeItem(scoped(REPS_BASE));
+      localStorage.removeItem(scoped(FAV_BASE));
+      localStorage.removeItem(scoped(ASSESSED_BASE));
+    } catch (err) {}
+    emit("reset");
+  }
+
+  // Wipe one account's training off this device — used when the account
+  // itself is deleted, so nothing of theirs is left behind in the browser.
+  function forget(userId) {
+    if (!userId) return;
+    try {
+      localStorage.removeItem(scoped(REPS_BASE, userId));
+      localStorage.removeItem(scoped(FAV_BASE, userId));
+      localStorage.removeItem(scoped(ASSESSED_BASE, userId));
+    } catch (err) {}
+    const current = global.MuAuth && global.MuAuth.currentUser();
+    if (current && current.id === userId) { repsState = {}; favourite = null; }
+  }
+
+  /* ------------------------------------------------------------------
      Aggregates — what the leaderboard shows
      ------------------------------------------------------------------ */
   function summarise(reps, favouriteKey) {
@@ -438,6 +469,8 @@
     isFavourite,
     stats,
     statsFor,
+    resetTree,
+    forget,
     reload: loadState,
     onChange(fn) {
       listeners.push(fn);

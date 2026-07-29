@@ -7,9 +7,9 @@
 <meta name="description" content="Set the username and name other MuscleUp athletes see on the leaderboard.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#0a0d12">
-<link rel="stylesheet" href="css/style.css?v=3">
-<link rel="stylesheet" href="css/auth.css?v=3">
-<link rel="stylesheet" href="css/pages.css?v=3">
+<link rel="stylesheet" href="css/style.css?v=4">
+<link rel="stylesheet" href="css/auth.css?v=4">
+<link rel="stylesheet" href="css/pages.css?v=4">
 </head>
 <body>
 
@@ -102,6 +102,48 @@
         <p class="pf-preview__note">Reps and your favourite position come from the skill tree — star any position there to set it.</p>
       </aside>
 
+      <!-- irreversible things, kept apart from the form on purpose -->
+      <section class="pf-danger" aria-labelledby="pf-danger-title">
+        <h2 class="pf-danger__title" id="pf-danger-title">Danger zone</h2>
+
+        <div class="pf-danger__item">
+          <div class="pf-danger__row">
+            <div class="pf-danger__text">
+              <h3>Reset my tree</h3>
+              <p>Wipes every rep, your favourite position and the first-run check-in, so the tree starts from zero. Your account and username stay as they are.</p>
+            </div>
+            <button type="button" class="btn btn--danger" id="pf-reset">Reset tree</button>
+          </div>
+          <div class="pf-danger__confirm" id="pf-reset-confirm" hidden>
+            <p>This clears <b id="pf-reset-count">0</b> reps and can't be undone.</p>
+            <div class="pf-danger__buttons">
+              <button type="button" class="btn btn--ghost btn--small" data-danger-cancel="reset">Cancel</button>
+              <button type="button" class="btn btn--danger btn--small" id="pf-reset-go">Yes, reset my tree</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-danger__item">
+          <div class="pf-danger__row">
+            <div class="pf-danger__text">
+              <h3>Delete my account</h3>
+              <p>Removes your account, your profile and your place on the leaderboard, along with everything this browser stored for you. There is no undo.</p>
+            </div>
+            <button type="button" class="btn btn--danger" id="pf-delete">Delete account</button>
+          </div>
+          <div class="pf-danger__confirm" id="pf-delete-confirm" hidden>
+            <label for="pf-delete-input">Type <b>DELETE</b> to confirm</label>
+            <input type="text" id="pf-delete-input" autocomplete="off" spellcheck="false" placeholder="DELETE">
+            <div class="pf-danger__buttons">
+              <button type="button" class="btn btn--ghost btn--small" data-danger-cancel="delete">Cancel</button>
+              <button type="button" class="btn btn--danger btn--small" id="pf-delete-go" disabled>Delete permanently</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="pf-danger__note" id="pf-danger-note" role="status" aria-live="polite"></p>
+      </section>
+
     </div>
 
   </div>
@@ -117,10 +159,10 @@
   </div>
 </footer>
 
-<script src="js/auth-config.js?v=3"></script>
-<script src="js/auth.js?v=3"></script>
-<script src="js/skills.js?v=3"></script>
-<script src="js/profiles.js?v=3"></script>
-<script src="js/profile-page.js?v=3"></script>
+<script src="js/auth-config.js?v=4"></script>
+<script src="js/auth.js?v=4"></script>
+<script src="js/skills.js?v=4"></script>
+<script src="js/profiles.js?v=4"></script>
+<script src="js/profile-page.js?v=4"></script>
 </body>
 </html>

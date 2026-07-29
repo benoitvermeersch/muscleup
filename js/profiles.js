@@ -169,6 +169,14 @@
       err.code = "no_table";
       return err;
     }
+    if (code === "PGRST202" || /could not find the function/i.test(message)) {
+      const err = new Error(
+        "Account deletion isn't set up on this Supabase project yet. " +
+        "Re-run supabase/schema.sql in the Supabase SQL editor."
+      );
+      err.code = "no_function";
+      return err;
+    }
     if (code === "23505" || /duplicate key|already exists/i.test(message)) {
       const err = new Error("That username is already taken — try another.");
       err.code = "username_taken";
@@ -403,6 +411,38 @@
   }
 
   /* ------------------------------------------------------------------
+     Closing the account
+
+     Supabase gives the browser no way to delete its own auth user — that
+     lives behind the service-role key, which must never ship to a page. The
+     schema installs a `delete_own_account` function instead, which deletes
+     only the caller's row and takes the profile with it via the cascade.
+     ------------------------------------------------------------------ */
+  async function deleteAccount() {
+    const id = uid();
+    if (!id) throw new Error("Log in first.");
+
+    if (REMOTE) {
+      await rest("/rpc/delete_own_account", { method: "POST", body: {}, auth: true });
+    } else {
+      const users = readJSON(USERS_KEY, {}) || {};
+      Object.keys(users).forEach((email) => {
+        if (users[email] && users[email].id === id) delete users[email];
+      });
+      writeJSON(USERS_KEY, users);
+    }
+
+    // nothing of theirs should survive on this device either
+    try { localStorage.removeItem(localProfileKey(id)); } catch (err) {}
+    global.MuSkills.forget(id);
+
+    clearTimeout(pushTimer);          // no posthumous stat push
+    loadedFor = null;
+    global.MuAuth.logOut();           // clears the cache through onChange
+    return true;
+  }
+
+  /* ------------------------------------------------------------------
      The leaderboard feed — everyone who ever registered
      ------------------------------------------------------------------ */
   async function list() {
@@ -436,7 +476,7 @@
 
   if (global.MuSkills) {
     global.MuSkills.onChange((reason) => {
-      if (reason !== "reps" && reason !== "favourite") return;
+      if (reason !== "reps" && reason !== "favourite" && reason !== "reset") return;
       if (REMOTE) { schedulePush(); return; }
 
       // Local mode publishes nothing, but anything watching the profile —
@@ -468,6 +508,7 @@
     save,
     list,
     pushStats,
+    deleteAccount,
     displayName,
     fullName,
     checkUsername,

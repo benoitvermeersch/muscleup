@@ -821,6 +821,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // signed out the tour still runs through the branches section
       { label: "Skill Tree", href: () => toHome("#categories"), tree: true },
       { label: "AI Coach", href: () => toHome("#ai") },
+      { label: "Contact", href: () => "contact.html", page: "contact" },
     ],
     in: [
       { label: "Home", href: () => (ON_HOME ? "#top" : "index.html"), page: "index" },
