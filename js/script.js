@@ -94,13 +94,25 @@ const {
    Layout engine: radial tidy-tree fanned into an upward "V" wedge
    --------------------------------------------------------------------- */
 const CIRCLE_R = 32;  // skill node radius
-const LABEL_H  = 52;  // space under each circle for the name + progress bar
+const LABEL_H  = 62;  // space under each circle for the name (up to 3 lines) + bar
 const FO_W     = 126; // node footprint width (for bounding box)
-const BASE_R = 340;   // radius of the first ring (depth 1)
-const RING   = 240;   // distance between rings
+const BASE_R = 300;   // radius of the first ring (depth 1)
+const RING   = 195;   // distance between rings
 const CENTER_ANGLE = -Math.PI / 2;         // wedge points straight up
-const WEDGE_SPAN = (110 * Math.PI) / 180;  // every branch is exactly 110° wide
-const ROT_STEP   = 122;                     // deg between adjacent wedges in the carousel
+
+/* One circle cut into equal slices, so the wheel closes exactly: the slice
+   width and the angle between neighbours are the same number, and every
+   branch is drawn out to the same radius. Get those apart and the rim shows
+   a sliver of nothing between one branch and the next.
+
+   Nodes sit inside a slightly narrower fan than the slice they belong to, so
+   a wide label on the edge of one branch doesn't lean into its neighbour. */
+const BRANCHES   = CATEGORIES.length;
+const WEDGE_DEG  = 360 / BRANCHES;          // 72° across, for five branches
+const ROT_STEP   = WEDGE_DEG;               // deg between adjacent wedges
+const NODE_INSET = 8;                       // deg kept clear of each divider
+const WEDGE_SPAN = ((WEDGE_DEG - NODE_INSET) * Math.PI) / 180;
+
 const R_START   = 210;                      // vertical radius of the START base (used for edge offset + text)
 const R_START_X = 250;                       // horizontal radius — a touch wider than tall
 
@@ -222,13 +234,15 @@ function trimLine(from, to, offFrom, offTo) {
   };
 }
 
-function renderCategorySVG(cat) {
-  const { pos, byId, maxR, aMin, aMax } = layoutCategory(cat);
+function renderCategorySVG(cat, rOuter) {
+  const { pos } = layoutCategory(cat);
 
-  // --- wedge backdrop (the "V" slice) ---
-  const rOuter = maxR + BASE_R * 0.5;
-  const pad = 0.06;
-  const a0 = aMin - pad, a1 = aMax + pad;
+  // --- wedge backdrop: exactly one slice of the wheel ---
+  // Cut from the slice's own geometry rather than from wherever the nodes
+  // happened to land, and out to the radius shared by every branch, so the
+  // five sectors tile the circle with no gap and no overlap.
+  const half = (WEDGE_DEG * Math.PI) / 360;
+  const a0 = CENTER_ANGLE - half, a1 = CENTER_ANGLE + half;
   const SAMPLES = 28;
   let sector = `M 0 0`;
   for (let i = 0; i <= SAMPLES; i++) {
@@ -238,8 +252,8 @@ function renderCategorySVG(cat) {
   sector += " Z";
   let svg = `<path class="tt-sector" d="${sector}"/>`;
 
-  // faint depth-ring guides
-  const rings = Math.max(2, Math.round((maxR - BASE_R) / RING) + 1);
+  // faint depth-ring guides, carried across the whole slice
+  const rings = Math.max(2, Math.floor((rOuter - BASE_R) / RING) + 1);
   for (let i = 1; i <= rings; i++) {
     const rr = (BASE_R + (i - 1) * RING).toFixed(1);
     let arc = "";
@@ -335,15 +349,18 @@ function renderCategorySVG(cat) {
       `</g>`;
   });
 
-  // content bounding box
+  // Bounding box of what there is to look at — the skills and the START base.
+  // The sector backdrop is deliberately left out: it now runs to a radius
+  // shared by all five branches, and taking that as the extent of a short
+  // branch would leave you panning around a lot of empty slice.
   const xs = [], ys = [];
   cat.nodes.forEach((n) => {
     const c = pos.get(n.id);
     xs.push(c.x - foW / 2, c.x + foW / 2);
     ys.push(c.y - CIRCLE_R, c.y + CIRCLE_R + LABEL_H);
   });
-  xs.push(-rOuter * Math.abs(Math.cos(a0)) - 40, rOuter * Math.abs(Math.cos(a1)) + 40, 0);
-  ys.push(-rOuter - 20, 60);
+  xs.push(-R_START_X, R_START_X);
+  ys.push(-R_START, 60);
   const P = 70;
   const minX = Math.min(...xs) - P, maxX = Math.max(...xs) + P;
   const minY = Math.min(...ys) - P, maxY = Math.max(...ys) + P;
@@ -413,8 +430,11 @@ function initSkillTree() {
   function build() {
     let inner = `<defs><marker id="tt-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--tt-line)"/></marker></defs>`;
     inner += `<g id="tt-wheel">`;
+    // the deepest branch sets the rim, and every slice is drawn to it
+    const rOuter = CATEGORIES.reduce(
+      (max, cat) => Math.max(max, layoutCategory(cat).maxR), 0) + BASE_R * 0.5;
     CATEGORIES.forEach((cat, i) => {
-      const { markup, box: b } = renderCategorySVG(cat);
+      const { markup, box: b } = renderCategorySVG(cat, rOuter);
       boxes[i] = b;
       inner += `<g class="tt-wedge" data-wi="${i}">${markup}</g>`;
     });
@@ -434,8 +454,9 @@ function initSkillTree() {
       const theta = (iu - pos) * ROT_STEP;            // degrees around origin
       el.setAttribute("transform", `rotate(${theta.toFixed(2)})`);
       const a = Math.abs(theta);
-      let op = a < 1 ? 1 : Math.max(0.34, 1 - a / (ROT_STEP * 1.55));
-      if (a > ROT_STEP * 1.6) op = 0;
+      // Every slice stays drawn — the wheel is only whole if all five are
+      // there — with the centred branch brought forward out of the rest.
+      const op = a < 1 ? 1 : Math.max(0.3, 1 - a / (ROT_STEP * 2.6));
       el.style.opacity = op.toFixed(3);
       const isCenter = a < ROT_STEP * 0.5;
       el.style.pointerEvents = isCenter && !animating ? "auto" : "none";
@@ -794,10 +815,12 @@ function initSkillTree() {
     return { x: p.x, y: p.y };
   }
   function zoomAround(ux, uy, factor) {
-    // The default view is the widest the map ever gets: you can zoom in and
-    // come back out to it, but never past it.
+    // Out as far as the whole branch on screen at once, and no further —
+    // past that you'd only be adding empty space around it. The default view
+    // is closer in than that, so there is room to pull back from it.
     const minW = box.w * 0.16;
-    const maxW = homeW;
+    const aspect = vb.h > 0 ? vb.w / vb.h : 1;
+    const maxW = Math.max(homeW, box.w, box.h * aspect) * 1.04;
     let w = Math.min(Math.max(vb.w * factor, minW), maxW);
     const f = w / vb.w;
     vb.x = ux - (ux - vb.x) * f;
