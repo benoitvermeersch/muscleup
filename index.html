@@ -11,8 +11,8 @@
 <link rel="dns-prefetch" href="https://ixcmhtoixwewbaqtuimb.supabase.co">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#0a0d12">
-<link rel="stylesheet" href="css/style.css?v=14">
-<link rel="stylesheet" href="css/auth.css?v=14">
+<link rel="stylesheet" href="css/style.css?v=15">
+<link rel="stylesheet" href="css/auth.css?v=15">
 </head>
 <body>
 
@@ -360,31 +360,45 @@
   </div>
 </div>
 
-<!-- FIRST-RUN ASSESSMENT -->
+<!-- SIGN-UP CHECK-IN — step 1 picks a level, step 2 asks what you can do -->
 <div class="assess" id="assess" hidden>
   <div class="assess__backdrop"></div>
   <div class="assess__card" role="dialog" aria-modal="true" aria-labelledby="assess-title">
-    <span class="assess__eyebrow">Step 1 · Find your starting point</span>
-    <h2 class="assess__title" id="assess-title">Which of these can you do?</h2>
-    <p class="assess__lead">Tick everything you can already manage with clean form. Each one you tick unlocks the skills above it on your tree.</p>
 
-    <div class="assess__list" id="assess-list"></div>
+    <!-- STEP 1 — pick a level -->
+    <div class="assess__step" data-assess-step="level">
+      <span class="assess__eyebrow">Step 1 of 2 · Pick your level</span>
+      <h2 class="assess__title" id="assess-title">Where are you starting from?</h2>
+      <p class="assess__lead">This decides which exercises we ask about next — nothing is unlocked yet. Everyone starts on zero reps whichever you pick.</p>
 
-    <div class="assess__foot">
-      <p class="assess__count" id="assess-count"></p>
-      <div class="assess__actions">
-        <button type="button" class="btn btn--ghost" id="assess-skip">Start from zero</button>
-        <button type="button" class="btn btn--primary" id="assess-save">Unlock my tree</button>
+      <div class="assess__levels" id="assess-levels"></div>
+    </div>
+
+    <!-- STEP 2 — which of that level's exercises you can already do -->
+    <div class="assess__step" data-assess-step="skills" hidden>
+      <span class="assess__eyebrow">Step 2 of 2 · <span id="assess-level-name"></span></span>
+      <h2 class="assess__title" id="assess-title-2">Which of these can you do?</h2>
+      <p class="assess__lead" id="assess-skills-lead"></p>
+
+      <div class="assess__list" id="assess-list"></div>
+
+      <div class="assess__foot">
+        <p class="assess__count" id="assess-count"></p>
+        <div class="assess__actions">
+          <button type="button" class="btn btn--ghost" id="assess-back">← Change level</button>
+          <button type="button" class="btn btn--primary" id="assess-save">Unlock my tree</button>
+        </div>
+        <p class="assess__final">Change your level as often as you like — once you confirm this list, the check-in is done.</p>
       </div>
     </div>
   </div>
 </div>
 
-<script src="js/auth-config.js?v=14"></script>
-<script src="js/auth.js?v=14"></script>
-<script src="js/skills.js?v=14"></script>
-<script src="js/profiles.js?v=14"></script>
-<script src="js/script.js?v=14"></script>
-<script src="js/tree-board.js?v=14"></script>
+<script src="js/auth-config.js?v=15"></script>
+<script src="js/auth.js?v=15"></script>
+<script src="js/skills.js?v=15"></script>
+<script src="js/profiles.js?v=15"></script>
+<script src="js/script.js?v=15"></script>
+<script src="js/tree-board.js?v=15"></script>
 </body>
 </html>

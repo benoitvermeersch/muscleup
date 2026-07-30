@@ -1052,6 +1052,18 @@ ul { margin: 0; padding: 0; list-style: none; }
 .pop-quick__b:hover { border-color: var(--lime-dim); color: var(--text); }
 .pop-note { font-size: 0.74rem; color: var(--text-faint); margin-top: 14px; line-height: 1.4; }
 
+/* a skill the check-in ticked: open, but on zero reps like everything else */
+.pop-cleared {
+  margin: 12px 0 4px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 /* shown when an entry was clamped, so a changed number is never silent */
 .pop-warn {
   margin-top: 12px;

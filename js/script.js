@@ -85,9 +85,10 @@ function initWaitlist() {
    leaderboard and the profile page read the same numbers this map draws.
    --------------------------------------------------------------------- */
 const {
-  FAMILY, CATEGORIES, RANKS, REPS_PER_RANK, UNLOCK_REPS, STARTERS,
-  repsOf, addRepsTo, setRepsTo, rankIndex, isUnlocked, prereqsOf, skillByKey,
+  FAMILY, CATEGORIES, RANKS, REPS_PER_RANK, UNLOCK_REPS, LEVELS,
+  repsOf, addRepsTo, rankIndex, isUnlocked, prereqsOf, skillByKey, levelByKey,
   isFavourite, toggleFavourite, MAX_REPS_PER_ENTRY,
+  hasAssessed, applyAssessment, previewUnlocked, isCleared,
 } = window.MuSkills;
 
 /* ---------------------------------------------------------------------
@@ -614,43 +615,77 @@ function initSkillTree() {
     });
   }
 
-  /* ---- first-run assessment ---- */
+  /* ---- the sign-up check-in ----
+
+     Step 1 picks a level, step 2 asks which of that level's exercises you
+     can already do. Step 1 → 2 is reversible: pick the wrong level and
+     Back returns you to the cards. Confirming step 2 is not — the answers
+     shape the tree from then on, and `markAssessed` (inside
+     applyAssessment) means the dialog is never offered again.
+
+     Nothing here hands out reps. Everyone starts on zero; the ticks only
+     decide how much of the tree is open. */
   const assessEl = document.getElementById("assess");
   const assessList = document.getElementById("assess-list");
+  const assessLevels = document.getElementById("assess-levels");
   const assessCount = document.getElementById("assess-count");
+  const assessLead = document.getElementById("assess-skills-lead");
+  const assessLevelName = document.getElementById("assess-level-name");
 
-  const assessKey = () => (window.MuAuth ? window.MuAuth.scopedKey("mu-assessed") : "mu-assessed");
-  function hasAssessed() {
-    try { return localStorage.getItem(assessKey()) === "1"; } catch (e) { return true; }
-  }
-  function markAssessed() {
-    try { localStorage.setItem(assessKey(), "1"); } catch (e) {}
-  }
+  let assessLevel = null;        // the level card picked on step 1
+  const picked = new Set();      // "cat:id" ticked on step 2
 
-  function starterInfo(entry) {
-    const cat = CATEGORIES.find((c) => c.key === entry.cat);
-    const node = cat && cat.nodes.find((n) => n.id === entry.id);
-    return { cat, node };
-  }
-
-  function refreshAssessCount() {
-    const n = assessList.querySelectorAll(".assess__item.is-checked").length;
-    assessCount.textContent = n === 0
-      ? "Nothing ticked — you'll start at the base of every branch."
-      : `${n} skill${n === 1 ? "" : "s"} ticked — that opens the next node on ${n === 1 ? "that line" : "those lines"}.`;
+  function assessStep(name) {
+    assessEl.querySelectorAll("[data-assess-step]").forEach((step) => {
+      step.hidden = step.dataset.assessStep !== name;
+    });
+    const card = assessEl.querySelector(".assess__card");
+    if (card) card.setAttribute("aria-labelledby", name === "level" ? "assess-title" : "assess-title-2");
   }
 
-  function openAssessment() {
-    if (!assessEl) return;
-    if (window.MuAuth && window.MuAuth.hideBanner) window.MuAuth.hideBanner();
+  /* ---- step 1: which level ---- */
+  function renderLevels() {
+    assessLevels.innerHTML = LEVELS.map((lvl) =>
+      `<button type="button" class="assess__level${lvl.key === assessLevel ? " is-picked" : ""}" ` +
+        `data-level="${esc(lvl.key)}">` +
+        `<span class="assess__level-icon" aria-hidden="true">${lvl.icon}</span>` +
+        `<span class="assess__level-text">` +
+          `<span class="assess__level-name">${esc(lvl.label)}</span>` +
+          `<span class="assess__level-desc">${esc(lvl.blurb)}</span>` +
+        `</span>` +
+        `<span class="assess__level-go" aria-hidden="true">→</span>` +
+      `</button>`).join("");
 
-    assessList.innerHTML = STARTERS.map((entry) => {
-      const { cat, node } = starterInfo(entry);
+    assessLevels.querySelectorAll("[data-level]").forEach((btn) =>
+      btn.addEventListener("click", () => chooseLevel(btn.dataset.level)));
+  }
+
+  function chooseLevel(key) {
+    // another level asks about other exercises, so ticks don't carry over
+    if (key !== assessLevel) picked.clear();
+    assessLevel = key;
+    renderSkills();
+    assessStep("skills");
+  }
+
+  /* ---- step 2: which of those you can do ---- */
+  function renderSkills() {
+    const lvl = levelByKey(assessLevel);
+    if (!lvl) return;
+
+    assessLevelName.textContent = lvl.label;
+    assessLead.textContent = lvl.lead;
+
+    assessList.innerHTML = lvl.skills.map((entry) => {
+      const cat = CATEGORIES.find((c) => c.key === entry.cat);
+      const node = cat && cat.nodes.find((n) => n.id === entry.id);
       if (!cat || !node) return "";
-      return `<label class="assess__item" style="--branch:${cat.color}">` +
-        `<input type="checkbox" data-starter="${entry.cat}:${entry.id}">` +
+      const key = `${entry.cat}:${entry.id}`;
+      const on = picked.has(key);
+      return `<label class="assess__item${on ? " is-checked" : ""}" style="--branch:${cat.color}">` +
+        `<input type="checkbox" data-skill="${esc(key)}"${on ? " checked" : ""}>` +
         `<span class="assess__box" aria-hidden="true"></span>` +
-        `<span class="assess__icon" aria-hidden="true">${entry.icon}</span>` +
+        `<span class="assess__icon" aria-hidden="true">${fam(node).icon || cat.icon}</span>` +
         `<span class="assess__text">` +
           `<span class="assess__name">${esc(node.label)}</span>` +
           `<span class="assess__target">${esc(entry.target)}</span>` +
@@ -659,14 +694,42 @@ function initSkillTree() {
         `</label>`;
     }).join("");
 
-    assessList.querySelectorAll("input[data-starter]").forEach((input) => {
+    assessList.querySelectorAll("input[data-skill]").forEach((input) => {
       input.addEventListener("change", () => {
+        if (input.checked) picked.add(input.dataset.skill);
+        else picked.delete(input.dataset.skill);
         input.closest(".assess__item").classList.toggle("is-checked", input.checked);
         refreshAssessCount();
       });
     });
 
+    assessList.scrollTop = 0;
     refreshAssessCount();
+  }
+
+  // Live proof of the deal: every tick opens more of the tree. The number
+  // is what the tree would actually look like, not an estimate.
+  function refreshAssessCount() {
+    const n = picked.size;
+    const open = previewUnlocked(Array.from(picked));
+    const saveBtn = document.getElementById("assess-save");
+
+    assessCount.innerHTML = n === 0
+      ? `Nothing ticked — you'd start at the base of every branch, with <b>${open}</b> skills open.`
+      : `<b>${n}</b> exercise${n === 1 ? "" : "s"} ticked — <b>${open}</b> skills open on your tree.`;
+
+    if (saveBtn) saveBtn.textContent = n === 0 ? "Start from zero" : "Unlock my tree";
+  }
+
+  function openAssessment() {
+    if (!assessEl) return;
+    if (window.MuAuth && window.MuAuth.hideBanner) window.MuAuth.hideBanner();
+
+    assessLevel = null;
+    picked.clear();
+    renderLevels();
+    assessStep("level");
+
     assessEl.hidden = false;
     requestAnimationFrame(() => assessEl.classList.add("is-open"));
   }
@@ -677,25 +740,26 @@ function initSkillTree() {
   }
 
   if (assessEl) {
-    document.getElementById("assess-save").addEventListener("click", () => {
-      let unlocked = 0;
-      assessList.querySelectorAll("input[data-starter]:checked").forEach((input) => {
-        const [catKey, id] = input.dataset.starter.split(":");
-        // credit exactly the reps needed to hit Novice, which is the unlock gate
-        if (repsOf(catKey, id) < UNLOCK_REPS) setRepsTo(catKey, id, UNLOCK_REPS);
-        unlocked++;
-      });
-      markAssessed();
-      closeAssessment();
-      build(); updateChrome(); layoutWheel();
-      if (unlocked && window.MuAuth && window.MuAuth.banner) {
-        window.MuAuth.banner(`${unlocked} skill${unlocked === 1 ? "" : "s"} unlocked. Tap any node to log reps.`, "ok");
-      }
+    // the one way back — available right up until the tree is confirmed
+    document.getElementById("assess-back").addEventListener("click", () => {
+      renderLevels();          // redrawn so the picked card stays marked
+      assessStep("level");
     });
 
-    document.getElementById("assess-skip").addEventListener("click", () => {
-      markAssessed();
+    document.getElementById("assess-save").addEventListener("click", () => {
+      const result = applyAssessment(assessLevel, Array.from(picked));
       closeAssessment();
+      build(); updateChrome(); layoutWheel();
+
+      if (window.MuAuth && window.MuAuth.banner) {
+        window.MuAuth.banner(
+          result.ticked
+            ? `${result.ticked} exercise${result.ticked === 1 ? "" : "s"} ticked — ` +
+              `${result.unlocked} skills open, all on zero reps. Tap any node to start logging.`
+            : `Starting from zero — ${result.unlocked} skills open. Tap any node to start logging.`,
+          "ok"
+        );
+      }
     });
   }
   document.getElementById("tree-close").addEventListener("click", close);
@@ -759,6 +823,12 @@ function initSkillTree() {
 
       html += `</div>`;
     } else {
+      // A skill the check-in ticked sits on zero reps with the line above it
+      // already open — say so, or the empty counter reads like a bug.
+      if (isCleared(cat.key, node.id) && reps === 0) {
+        html += `<p class="pop-cleared">You ticked this at your check-in, so what's above it is already ` +
+          `open. Log reps to start ranking it up.</p>`;
+      }
       html += `<div class="pop-rank"><span class="rank-chip rank-${ri}">${RANKS[ri]}</span>` +
         `<span class="pop-reps"><b>${reps}</b> total reps</span></div>`;
       html += `<div class="pop-bar"><i style="width:${isMax ? 100 : ((into / REPS_PER_RANK) * 100).toFixed(1)}%"></i></div>`;

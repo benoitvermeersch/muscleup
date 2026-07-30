@@ -21,13 +21,64 @@ get a confirmation email, and the account can't log in until that link is
 clicked.
 
 **The skill tree is open to everyone — an account isn't required.** Opening
-it runs a one-time check-in: tick the exercises you can already do and the
-skills above them unlock.
+it runs a one-time check-in first (below).
 
 Progress is stored per account, so two people sharing a browser don't
 inherit each other's tree. Signed out, progress is kept on the device under
 a `guest` key; it stays separate from any account you later sign in to,
 rather than being merged into it.
+
+### The check-in
+
+The first time the map opens it asks two questions, in order.
+
+**Step 1 — how far along are you?** Beginner, Intermediate or Advanced.
+That choice decides nothing about your tree; all it does is pick *which*
+exercises step 2 asks about. There's no point asking someone on their first
+push-up whether they hold a planche, or walking an advanced athlete through
+jumping jacks.
+
+**Step 2 — which of those can you already do?** A checklist drawn from the
+level you picked: ten foundations for a beginner, the middle of each branch
+for an intermediate, levers and handstands for an advanced athlete.
+
+**Step 1 is reversible, step 2 is not.** Picked the wrong level? **Change
+level** goes back to the cards and swaps the list — as many times as you
+like. Confirming the checklist ends the check-in for good: those answers
+shape the tree from then on, and the dialog is never offered again. Ticks
+don't survive a change of level, because a different level asks about
+different exercises.
+
+### Where you start
+
+**Everyone starts on zero.** Whatever you tick, and whichever level you
+pick, no reps are credited to anyone — the leaderboard begins at 0 for
+every account, and the check-in can't be used to buy a head start.
+
+What the ticks buy is *access*. A ticked exercise is stored as "I can
+already do this" (`mu-cleared`), which counts as met wherever that skill
+stands in another's way — the same claim 200 reps makes, minus the reps.
+So the more you tick, the more of the tree is open to train:
+
+| Ticked | Skills open |
+| --- | --- |
+| nothing | 5 — the base of each branch |
+| Push-Up | 11 |
+| Push-Up + Pull-Up | 17 |
+| the whole advanced list | 58 |
+
+The dialog counts this up live as you tick, so the trade is visible before
+you commit to it.
+
+Ticking high up a line takes the line below it as read: claim the Muscle-Up
+and the chest-to-bar, pull-up, jumping negative and dead hang under it are
+claimed too. Without that you'd end up with a muscle-up open above a locked
+dead hang. Only the parent chain is followed — plus the extras of an `AND`,
+which are genuine requirements. An `OR`'s extras are a second way in, not
+something the tick implies.
+
+Skills opened this way sit on zero reps with their line already open, so
+the popup says why rather than leaving an empty counter looking like a bug.
 
 ## Your profile
 
@@ -72,9 +123,10 @@ rather than a broken-image icon.
 The bottom of the profile page holds the two irreversible things, both
 behind a confirmation:
 
-- **Reset my tree** clears every rep, the favourite and the first-run
-  check-in, then publishes the zeroes so the leaderboard agrees. The
-  account and username survive.
+- **Reset my tree** clears every rep, the favourite, the check-in answers
+  and the level that framed them, then publishes the zeroes so the
+  leaderboard agrees. The check-in is offered again next time the map
+  opens. The account and username survive.
 - **Delete my account** takes the account, the profile row and everything
   this browser stored, and needs you to type DELETE first.
 
@@ -272,11 +324,11 @@ don't treat a local-mode account as protecting anything.
 ├── assets/logo.svg       # the mark, white on transparent
 ├── assets/favicon.svg    # the mark on a dark rounded tile
 ├── css/style.css         # landing page + skill tree styles
-├── css/auth.css          # auth dialog, account chip, first-run check-in
+├── css/auth.css          # auth dialog, account chip, the two-step check-in
 ├── css/pages.css         # leaderboard + profile pages
 ├── js/auth-config.js     # Supabase URL + anon key (empty → local mode)
 ├── js/auth.js            # signup / login / verification + the auth dialog
-├── js/skills.js          # branches, rep counters, favourite, aggregates
+├── js/skills.js          # branches, levels, rep counters, favourite, aggregates
 ├── js/profiles.js        # profile storage + the leaderboard feed
 ├── js/script.js          # skill tree wheel + progression
 ├── js/leaderboard.js     # the rankings table

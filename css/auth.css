@@ -357,7 +357,8 @@
 .auth-sent__note.is-error { color: #ff9c92; }
 
 /* =================================================
-   First-run assessment ("what can you already do?")
+   Sign-up check-in — step 1 picks a level, step 2
+   asks which of that level's exercises you can do
    ================================================= */
 
 .assess {
@@ -399,6 +400,15 @@
 }
 .assess.is-open .assess__card { opacity: 1; transform: translateY(0) scale(1); }
 
+/* one step on screen at a time; the card keeps its own height */
+.assess__step {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.assess__step[hidden] { display: none; }
+
 .assess__eyebrow {
   font-family: var(--font-display);
   font-size: 0.68rem;
@@ -410,9 +420,64 @@
 .assess__title { font-size: 1.35rem; margin-top: 8px; }
 .assess__lead { font-size: 0.88rem; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
 
+/* ---- step 1: the three level cards ---- */
+.assess__levels {
+  margin: 20px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.assess__level {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 15px 16px;
+  text-align: left;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.assess__level:hover {
+  border-color: var(--lime-dim);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+/* the card you came back from, so "Change level" shows where you were */
+.assess__level.is-picked {
+  border-color: var(--lime);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.assess__level-icon { flex: none; font-size: 1.5rem; line-height: 1; }
+.assess__level-text { flex: 1; min-width: 0; }
+.assess__level-name {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+}
+.assess__level-desc {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.79rem;
+  line-height: 1.4;
+  color: var(--text-faint);
+}
+.assess__level-go { flex: none; color: var(--text-faint); font-size: 1.1rem; }
+.assess__level:hover .assess__level-go { color: var(--lime); }
+
+/* ---- step 2: the exercise checklist ---- */
 .assess__list {
   margin: 18px 0 6px;
   overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -474,10 +539,18 @@
   border: 1px solid var(--border);
 }
 
-.assess__foot { margin-top: 16px; }
+.assess__foot { margin-top: 16px; flex: none; }
 .assess__count { font-size: 0.8rem; color: var(--text-faint); text-align: center; margin-bottom: 11px; }
+.assess__count b { color: var(--lime); }
 .assess__actions { display: flex; gap: 10px; }
 .assess__actions .btn { flex: 1; }
+.assess__final {
+  margin-top: 11px;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--text-faint);
+  text-align: center;
+}
 
 @media (max-width: 560px) {
   .auth-modal__card, .assess__card { padding: 24px 20px 20px; }

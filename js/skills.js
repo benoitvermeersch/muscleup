@@ -9,7 +9,7 @@
 
    Exposes `MuSkills`:
 
-     CATEGORIES, FAMILY, RANKS, REPS_PER_RANK, UNLOCK_REPS, STARTERS
+     CATEGORIES, FAMILY, RANKS, REPS_PER_RANK, UNLOCK_REPS, LEVELS
      repsOf(catKey, id)            → reps logged on one skill
      addRepsTo / setRepsTo         → log reps (persists + notifies)
      rankIndex(reps)               → 0..4 index into RANKS
@@ -17,12 +17,14 @@
      prereqsOf(catKey, node)       → [{ catKey, id }] standing in its way
      skillByKey("push:pushup")     → { cat, node }
      getFavourite() / setFavourite / toggleFavourite / isFavourite
+     hasAssessed() / applyAssessment(level, keys) / previewUnlocked(keys)
+     isCleared(catKey, id)         → ticked at the sign-up check-in
      stats()                       → { totalReps, categoryReps, topCategory, … }
      statsFor(userId)              → the same, for any account on this device
      onChange(fn)                  → fires whenever reps or the favourite move
 
-   Reps and the favourite are stored per account (see MuAuth.scopedKey), so
-   two people sharing a browser keep separate trees.
+   Reps, the favourite and the check-in are stored per account (see
+   MuAuth.scopedKey), so two people sharing a browser keep separate trees.
    ===================================================================== */
 
 (function (global) {
@@ -233,15 +235,99 @@
     return Math.min(n, max);
   }
 
-  // First-run check-in: the ground-floor skill of each line. Ticking one
-  // credits it with UNLOCK_REPS, which opens everything sitting above it.
-  const STARTERS = [
-    { cat: "push",   id: "inclinepush",  icon: "💪", target: "10 clean reps" },
-    { cat: "pull",   id: "deadhang",     icon: "🧗", target: "a 30-second hang" },
-    { cat: "legs",   id: "lunge",        icon: "🦵", target: "10 reps each leg" },
-    { cat: "core",   id: "boathold",     icon: "🛶", target: "a 30-second hold" },
-    { cat: "cardio", id: "jumpingjacks", icon: "🏃", target: "50 unbroken" },
+  /* ------------------------------------------------------------------
+     The sign-up check-in
+
+     Two steps. First you say roughly where you are — beginner,
+     intermediate or advanced — and that decides *which* exercises the
+     second step asks about: there is no point asking someone on their
+     first push-up whether they hold a planche, and no point walking an
+     advanced athlete through jumping jacks.
+
+     Nothing here credits reps. Everyone starts on zero, however they
+     answer; ticking an exercise only says "I can already do this",
+     which opens the skills sitting above it (see `clearedState`). Tick
+     more and more of the tree is open — that is the whole mechanism.
+     ------------------------------------------------------------------ */
+  const LEVELS = [
+    {
+      key: "beginner",
+      label: "Beginner",
+      icon: "🌱",
+      blurb: "New to training, or coming back after a long break.",
+      lead: "The ground floor of every branch. Tick what you can already manage with clean form.",
+      skills: [
+        { cat: "push",   id: "inclinepush",  target: "10 reps against a bench or wall" },
+        { cat: "push",   id: "kneepush",     target: "10 reps on your knees" },
+        { cat: "pull",   id: "deadhang",     target: "a 30-second hang" },
+        { cat: "legs",   id: "lunge",        target: "10 reps each leg" },
+        { cat: "legs",   id: "squat",        target: "20 bodyweight squats" },
+        { cat: "core",   id: "boathold",     target: "a 30-second hold" },
+        { cat: "core",   id: "plank",        target: "a 45-second plank" },
+        { cat: "cardio", id: "jumpingjacks", target: "50 unbroken" },
+        { cat: "cardio", id: "highknees",    target: "30 seconds at pace" },
+        { cat: "cardio", id: "jumprope",     target: "50 skips without a trip" },
+      ],
+    },
+
+    {
+      key: "intermediate",
+      label: "Intermediate",
+      icon: "⚡",
+      blurb: "Push-ups and squats are routine — you're chasing the pull-up and the dip.",
+      lead: "The middle of each branch. The basics under these are taken as read once you tick one.",
+      skills: [
+        { cat: "push",   id: "pushup",        target: "15 full push-ups" },
+        { cat: "push",   id: "explosivepush", target: "5 with the hands off the floor" },
+        { cat: "push",   id: "dip",           target: "8 full-depth dips" },
+        { cat: "push",   id: "pikepush",      target: "10 reps, hips high" },
+        { cat: "push",   id: "diamondpush",   target: "10 with the hands together" },
+        { cat: "pull",   id: "jumpneg",       target: "5 slow negatives" },
+        { cat: "pull",   id: "pullup",        target: "5 dead-hang pull-ups" },
+        { cat: "pull",   id: "auspull",       target: "12 body rows" },
+        { cat: "pull",   id: "chinup",        target: "8 chin-ups" },
+        { cat: "legs",   id: "pistol",        target: "3 each leg" },
+        { cat: "legs",   id: "nordic",        target: "5 controlled reps" },
+        { cat: "core",   id: "legraises",     target: "15 straight-leg raises" },
+        { cat: "core",   id: "tucksit",       target: "a 20-second tuck sit" },
+        { cat: "cardio", id: "burpee",        target: "20 unbroken" },
+        { cat: "cardio", id: "mountain",      target: "45 seconds at pace" },
+      ],
+    },
+
+    {
+      key: "advanced",
+      label: "Advanced",
+      icon: "🔥",
+      blurb: "Muscle-ups, handstands and levers are the language you train in.",
+      lead: "The top of each branch. Ticking one takes everything below it on that line as read.",
+      skills: [
+        { cat: "push",   id: "elevpike",    target: "8 with the feet raised" },
+        { cat: "push",   id: "hswall",      target: "a 45-second wall handstand" },
+        { cat: "push",   id: "hspushwall",  target: "5 against the wall" },
+        { cat: "push",   id: "handstand",   target: "a 15-second free handstand" },
+        { cat: "push",   id: "oapush",      target: "3 one-arm push-ups a side" },
+        { cat: "push",   id: "planchelean", target: "a 20-second lean" },
+        { cat: "push",   id: "pseudopp",    target: "8 pseudo planche push-ups" },
+        { cat: "push",   id: "frogstand",   target: "a 30-second frog stand" },
+        { cat: "push",   id: "elbowlever",  target: "a 20-second elbow lever" },
+        { cat: "push",   id: "tuckplanche", target: "a 15-second tuck planche" },
+        { cat: "pull",   id: "chesttobar",  target: "8 chest-to-bar" },
+        { cat: "pull",   id: "naveltobar",  target: "5 navel-to-bar" },
+        { cat: "pull",   id: "muscleup",    target: "one clean muscle-up" },
+        { cat: "pull",   id: "straddlefl",  target: "a 10-second straddle front lever" },
+        { cat: "pull",   id: "frontlever",  target: "a 10-second front lever" },
+        { cat: "core",   id: "lsit",        target: "a 20-second L-sit" },
+        { cat: "core",   id: "humanflag",   target: "a 5-second flag" },
+        { cat: "core",   id: "backlever",   target: "a 10-second back lever" },
+        { cat: "cardio", id: "sprint",      target: "6 × 30-second sprints" },
+      ],
+    },
   ];
+
+  function levelByKey(key) {
+    return LEVELS.find((l) => l.key === key) || null;
+  }
 
   /* ------------------------------------------------------------------
      Lookups
@@ -268,7 +354,9 @@
      ------------------------------------------------------------------ */
   const REPS_BASE = "mu-reps";
   const FAV_BASE = "mu-favourite";
-  const ASSESSED_BASE = "mu-assessed";   // the first-run check-in flag
+  const ASSESSED_BASE = "mu-assessed";   // the sign-up check-in flag
+  const CLEARED_BASE = "mu-cleared";     // skills ticked at that check-in
+  const LEVEL_BASE = "mu-level";         // beginner / intermediate / advanced
 
   function scoped(base, userId) {
     if (userId) return `${base}:${userId}`;
@@ -287,6 +375,8 @@
 
   let repsState = {};
   let favourite = null;
+  let clearedState = new Set();   // "cat:id" of everything the check-in ticked
+  let level = null;
 
   // A browser holding a bad number from before the cap existed is repaired
   // on the next load rather than poisoning every total from then on. A count
@@ -310,11 +400,25 @@
     repsState = clean;
     if (changed) saveReps();
     try { favourite = localStorage.getItem(scoped(FAV_BASE)) || null; } catch (err) { favourite = null; }
+
+    // a key naming a skill that no longer exists is dropped rather than
+    // sitting in storage unlocking nothing
+    const stored = readJSON(scoped(CLEARED_BASE), []) || [];
+    clearedState = new Set(
+      (Array.isArray(stored) ? stored : []).filter((key) => skillByKey(key).node)
+    );
+    try { level = localStorage.getItem(scoped(LEVEL_BASE)) || null; } catch (err) { level = null; }
   }
   loadState();
 
   function saveReps() {
     try { localStorage.setItem(scoped(REPS_BASE), JSON.stringify(repsState)); } catch (err) {}
+  }
+
+  function saveCleared() {
+    try {
+      localStorage.setItem(scoped(CLEARED_BASE), JSON.stringify(Array.from(clearedState)));
+    } catch (err) {}
   }
 
   /* ------------------------------------------------------------------
@@ -380,15 +484,95 @@
     return refs;
   }
 
-  function refMet(ref) { return repsOf(ref.catKey, ref.id) >= UNLOCK_REPS; }
+  // A prerequisite is satisfied by training it to Novice, or by having
+  // ticked it at the check-in — "I can already do this" is the same claim
+  // 200 reps makes, minus the reps. `cleared` overrides the stored set so
+  // the check-in can price a set of ticks before committing to them.
+  function refMet(ref, cleared) {
+    if ((cleared || clearedState).has(`${ref.catKey}:${ref.id}`)) return true;
+    return repsOf(ref.catKey, ref.id) >= UNLOCK_REPS;
+  }
 
-  function isUnlocked(cat, node) {
+  function isUnlocked(cat, node, cleared) {
     const refs = prereqsOf(cat.key, node);
     if (!refs.length) return true;   // sits on START — always open
     // AND wants every prerequisite at Novice. Anything else — an explicit
     // OR, or an `extra` that just marks a second way in — opens on the first.
-    return node.connector === "AND" ? refs.every(refMet) : refs.some(refMet);
+    const met = (ref) => refMet(ref, cleared);
+    return node.connector === "AND" ? refs.every(met) : refs.some(met);
   }
+
+  function countUnlocked(cleared) {
+    let n = 0;
+    CATEGORIES.forEach((cat) => {
+      cat.nodes.forEach((node) => { if (isUnlocked(cat, node, cleared)) n++; });
+    });
+    return n;
+  }
+
+  /* ------------------------------------------------------------------
+     The check-in
+
+     Ticking "Muscle-Up" is also a claim on every pull-up that leads to
+     it, so a tick is expanded up its own line before it is stored —
+     otherwise an advanced athlete would end up with a muscle-up open
+     above a locked dead hang. Only the parent chain is followed (plus
+     the extras of an AND, which are genuine requirements); an OR's
+     extras are a second way in, not something the tick implies.
+     ------------------------------------------------------------------ */
+  function addWithAncestors(key, set) {
+    if (!key || set.has(key)) return;
+    const { cat, node } = skillByKey(key);
+    if (!cat || !node) return;
+    set.add(key);
+
+    const refs = [];
+    if (node.parent && node.parent !== "START") refs.push(resolveRef(cat.key, node.parent));
+    if (node.connector === "AND") {
+      (node.extra || []).forEach((ref) => refs.push(resolveRef(cat.key, ref)));
+    }
+    refs.forEach((ref) => addWithAncestors(`${ref.catKey}:${ref.id}`, set));
+  }
+
+  function expandCleared(keys) {
+    const set = new Set(clearedState);
+    (keys || []).forEach((key) => addWithAncestors(key, set));
+    return set;
+  }
+
+  // how much of the tree a set of ticks would open, before it is saved —
+  // what the check-in counts up live as you tick
+  function previewUnlocked(keys) { return countUnlocked(expandCleared(keys)); }
+
+  const assessedKey = () => scoped(ASSESSED_BASE);
+  function hasAssessed() {
+    // storage unreadable → treat it as done rather than asking on every visit
+    try { return localStorage.getItem(assessedKey()) === "1"; } catch (err) { return true; }
+  }
+  function markAssessed() {
+    try { localStorage.setItem(assessedKey(), "1"); } catch (err) {}
+  }
+
+  // Save the check-in. No reps are credited — everyone starts on zero,
+  // whichever level they picked. The ticks decide what is *open*, not
+  // what has been done.
+  function applyAssessment(levelKey, keys) {
+    clearedState = expandCleared(keys);
+    saveCleared();
+
+    level = levelByKey(levelKey) ? levelKey : null;
+    try {
+      if (level) localStorage.setItem(scoped(LEVEL_BASE), level);
+      else localStorage.removeItem(scoped(LEVEL_BASE));
+    } catch (err) {}
+
+    markAssessed();
+    emit("assessment");
+    return { ticked: (keys || []).length, cleared: clearedState.size, unlocked: countUnlocked() };
+  }
+
+  function isCleared(catKey, id) { return clearedState.has(`${catKey}:${id}`); }
+  function getLevel() { return level; }
 
   /* ------------------------------------------------------------------
      Favourite skill — one per account, shown on the leaderboard
@@ -415,15 +599,19 @@
      Starting over
      ------------------------------------------------------------------ */
 
-  // Back to an empty tree: no reps, no favourite, and the first-run
+  // Back to an empty tree: no reps, no favourite, nothing ticked, and the
   // check-in offered again next time the map opens. The account stays.
   function resetTree() {
     repsState = {};
     favourite = null;
+    clearedState = new Set();
+    level = null;
     try {
       localStorage.removeItem(scoped(REPS_BASE));
       localStorage.removeItem(scoped(FAV_BASE));
       localStorage.removeItem(scoped(ASSESSED_BASE));
+      localStorage.removeItem(scoped(CLEARED_BASE));
+      localStorage.removeItem(scoped(LEVEL_BASE));
     } catch (err) {}
     emit("reset");
   }
@@ -436,9 +624,16 @@
       localStorage.removeItem(scoped(REPS_BASE, userId));
       localStorage.removeItem(scoped(FAV_BASE, userId));
       localStorage.removeItem(scoped(ASSESSED_BASE, userId));
+      localStorage.removeItem(scoped(CLEARED_BASE, userId));
+      localStorage.removeItem(scoped(LEVEL_BASE, userId));
     } catch (err) {}
     const current = global.MuAuth && global.MuAuth.currentUser();
-    if (current && current.id === userId) { repsState = {}; favourite = null; }
+    if (current && current.id === userId) {
+      repsState = {};
+      favourite = null;
+      clearedState = new Set();
+      level = null;
+    }
   }
 
   /* ------------------------------------------------------------------
@@ -494,9 +689,10 @@
     RANKS,
     REPS_PER_RANK,
     UNLOCK_REPS,
-    STARTERS,
+    LEVELS,
     MAX_REPS_PER_ENTRY,
     categoryByKey,
+    levelByKey,
     skillByKey,
     skillLabel,
     repsOf,
@@ -504,7 +700,14 @@
     setRepsTo,
     rankIndex,
     isUnlocked,
+    countUnlocked,
+    previewUnlocked,
     prereqsOf,
+    hasAssessed,
+    markAssessed,
+    applyAssessment,
+    isCleared,
+    getLevel,
     getFavourite,
     setFavourite,
     toggleFavourite,
