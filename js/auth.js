@@ -678,9 +678,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (!previewLink) {
-      html += `<p class="auth-sent__fine">Nothing after a minute? Check spam. Supabase's built-in ` +
-        `mailer only delivers to members of your Supabase organisation and caps at a couple of ` +
-        `sends per hour — add custom SMTP to mail everyone else.</p>`;
+      html += `<p class="auth-sent__fine">Nothing after a minute? Check spam.</p>`;
     }
 
     html += `<div class="auth-sent__actions">` +
