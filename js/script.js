@@ -369,7 +369,17 @@ function renderCategorySVG(cat, rOuter) {
   xs.push(-R_START_X, R_START_X);
   ys.push(-R_START, 60);
   const P = 70;
-  const minX = Math.min(...xs) - P, maxX = Math.max(...xs) + P;
+
+  // The box reaches equally far either side of START. No branch is symmetric
+  // — one line always runs deeper than the rest — and since this box is what
+  // the pan is clamped to, a lopsided one means START can never be brought to
+  // the middle of the screen: zoomed out the view centres on the box, and
+  // zoomed in you hit the near edge before START gets there. START is the
+  // fixed point every branch radiates from, so it's what stays centred, and
+  // the room this adds on the shallow side isn't empty — the neighbouring
+  // slices are drawn in it.
+  const reach = Math.max(Math.max(...xs), -Math.min(...xs)) + P;
+  const minX = -reach, maxX = reach;
   const minY = Math.min(...ys) - P, maxY = Math.max(...ys) + P;
 
   return {
@@ -505,7 +515,11 @@ function initSkillTree() {
     iconEl.textContent = cat.icon;
     metaEl.textContent = `Branch ${i + 1} / ${N}`;
     buildLegend(cat);
+    // Each branch reaches its own distance, so the limits move with it — and
+    // re-applying them here brings START back to the middle as you arrive
+    // rather than leaving the last branch's framing behind.
     box = boxes[i] || box;
+    applyViewBox();
     Array.from(dotsEl.children).forEach((d, di) => d.classList.toggle("is-active", di === i));
   }
 
