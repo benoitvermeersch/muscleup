@@ -100,15 +100,22 @@ const BASE_R = 300;   // radius of the first ring (depth 1)
 const RING   = 195;   // distance between rings
 const CENTER_ANGLE = -Math.PI / 2;         // wedge points straight up
 
-/* One circle cut into equal slices, so the wheel closes exactly: the slice
-   width and the angle between neighbours are the same number, and every
-   branch is drawn out to the same radius. Get those apart and the rim shows
-   a sliver of nothing between one branch and the next.
+/* The carousel only ever has three slices in play — the branch you're on and
+   the two either side of it — so a branch gets a third of the circle rather
+   than a fifth, and those three still tile 360° exactly. A fifth would close
+   the wheel too, but at 72° each it leaves every branch in a narrow column.
+
+   Slice width and the angle between neighbours have to be the same number.
+   Pull them apart and every join shows a sliver of nothing, which is what a
+   110° slice placed every 122° used to do.
+
+   The two slices furthest from centre come to rest on top of the two nearest.
+   They're faded out well before they get there, so nothing is drawn twice.
 
    Nodes sit inside a slightly narrower fan than the slice they belong to, so
    a wide label on the edge of one branch doesn't lean into its neighbour. */
-const BRANCHES   = CATEGORIES.length;
-const WEDGE_DEG  = 360 / BRANCHES;          // 72° across, for five branches
+const WEDGES_IN_VIEW = 3;
+const WEDGE_DEG  = 360 / WEDGES_IN_VIEW;    // 120° across
 const ROT_STEP   = WEDGE_DEG;               // deg between adjacent wedges
 const NODE_INSET = 8;                       // deg kept clear of each divider
 const WEDGE_SPAN = ((WEDGE_DEG - NODE_INSET) * Math.PI) / 180;
@@ -454,9 +461,11 @@ function initSkillTree() {
       const theta = (iu - pos) * ROT_STEP;            // degrees around origin
       el.setAttribute("transform", `rotate(${theta.toFixed(2)})`);
       const a = Math.abs(theta);
-      // Every slice stays drawn — the wheel is only whole if all five are
-      // there — with the centred branch brought forward out of the rest.
-      const op = a < 1 ? 1 : Math.max(0.3, 1 - a / (ROT_STEP * 2.6));
+      // The three slices nearest the centre make up the whole circle, so they
+      // all stay drawn, with the centred branch brought forward out of the
+      // others. Beyond them a slice is on its way to a place already taken,
+      // and has faded to nothing by the time it lands there.
+      const op = a < 1 ? 1 : Math.max(0, 1 - a / (ROT_STEP * 1.6));
       el.style.opacity = op.toFixed(3);
       const isCenter = a < ROT_STEP * 0.5;
       el.style.pointerEvents = isCenter && !animating ? "auto" : "none";
