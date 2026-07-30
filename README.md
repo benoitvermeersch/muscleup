@@ -185,6 +185,20 @@ The cap is enforced in four places, so no route around the form helps:
   or above the per-skill ceiling (which adding can't produce) is treated as
   overflow and dropped rather than parked at the top of the leaderboard
 
+### What a skill is
+
+Clicking a node opens it and says, in no more than three sentences, what
+the movement actually is — how it's performed, plus the form cue or the
+fact worth knowing about it. Every one of the 72 skills has one, and it
+shows on locked nodes as well as open ones: a name on its own doesn't tell
+you what a Hefesto is, and the skills you can't reach yet are exactly the
+ones you've never done.
+
+The text lives in a `DESCRIPTIONS` map in `js/skills.js`, keyed
+`branch:id` — separate from `CATEGORIES` so the shape of the tree stays
+scannable, and keyed by branch as well as id because Burpee sits on two of
+them.
+
 ### Favouriting a position
 
 Open any skill in the tree and hit **Make this my favourite**. The node
@@ -328,7 +342,7 @@ don't treat a local-mode account as protecting anything.
 ├── css/pages.css         # leaderboard + profile pages
 ├── js/auth-config.js     # Supabase URL + anon key (empty → local mode)
 ├── js/auth.js            # signup / login / verification + the auth dialog
-├── js/skills.js          # branches, levels, rep counters, favourite, aggregates
+├── js/skills.js          # branches, levels, descriptions, reps, favourite, aggregates
 ├── js/profiles.js        # profile storage + the leaderboard feed
 ├── js/script.js          # skill tree wheel + progression
 ├── js/leaderboard.js     # the rankings table

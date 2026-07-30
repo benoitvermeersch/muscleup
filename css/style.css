@@ -958,6 +958,18 @@ ul { margin: 0; padding: 0; list-style: none; }
 .pop-badge .lock-ico { width: 24px; height: 24px; color: var(--text-faint); }
 .pop-name { font-size: 1.15rem; line-height: 1.2; }
 
+/* what the movement is, in a sentence or three — sits between the name and
+   the favourite button, and shows whether or not the skill is open yet */
+.pop-desc {
+  --fam: var(--border);
+  margin: -2px 0 16px;
+  padding-left: 13px;
+  border-left: 2px solid color-mix(in srgb, var(--fam) 55%, transparent);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
 /* favourite this position — one star per account, shown on the leaderboard */
 .pop-fav {
   display: flex;

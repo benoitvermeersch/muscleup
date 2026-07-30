@@ -16,6 +16,7 @@
      isUnlocked(cat, node)         → is this skill open yet
      prereqsOf(catKey, node)       → [{ catKey, id }] standing in its way
      skillByKey("push:pushup")     → { cat, node }
+     describe(catKey, id)          → what the exercise is, in a sentence or three
      getFavourite() / setFavourite / toggleFavourite / isFavourite
      hasAssessed() / applyAssessment(level, keys) / previewUnlocked(keys)
      isCleared(catKey, id)         → ticked at the sign-up check-in
@@ -204,6 +205,103 @@
       ],
     },
   ];
+
+  /* ------------------------------------------------------------------
+     What each skill actually is
+
+     Shown when a node is opened, locked or not — a name alone doesn't
+     tell you what a Hefesto is, and the locked ones are exactly the
+     ones you've never done. Three sentences at the outside: what the
+     movement is, and the cue or fact worth knowing about it.
+
+     Kept out of CATEGORIES so the shape of the tree stays scannable.
+     Keyed "branch:id", because Burpee appears on two branches.
+     ------------------------------------------------------------------ */
+  const DESCRIPTIONS = {
+    /* --- push --- */
+    "push:inclinepush": "A push-up with the hands raised on a bench, a table or a wall. The higher the surface the less of your bodyweight you press, so it's the gentlest way into the movement. Work your way down towards the floor as it gets easy.",
+    "push:kneepush": "A push-up done from the knees rather than the toes, which cuts the load to roughly half your bodyweight. Keep a straight line from knees to shoulders — letting the hips sag turns it into a much easier exercise.",
+    "push:pushup": "The full movement: hands under the shoulders, body in one line from heels to head, chest to the floor and back up. Let the elbows track back at around 45° instead of flaring straight out to the sides.",
+    "push:oapush": "A full push-up pressed with one arm, the other held behind your back. Widen the feet for balance and fight the twist — the rotation is usually what gives out first, not the arm.",
+    "push:explosivepush": "A push-up driven hard enough that the hands leave the floor at the top. Land with soft elbows and reset between reps. It builds the pressing speed that clapping variations and the muscle-up are made of.",
+    "push:dip": "Supported on parallel bars, lower until the shoulders sit just below the elbows, then press back up. Lean the torso forward to bias the chest, or stay upright to put the work on the triceps.",
+    "push:impdip": "A dip taken to a near-horizontal lean, the hands finishing behind and below the hips. It asks for extreme straight-arm shoulder extension and is one of the hardest positions on the bars.",
+    "push:pikepush": "A push-up with the hips piked high, so you press mostly overhead rather than forward. It's the first real overhead press in the tree and the foundation of the whole handstand line.",
+    "push:diamondpush": "A push-up with the hands together under the chest, thumbs and index fingers making a diamond. Keeping the elbows tucked close shifts most of the work onto the triceps.",
+    "push:elevpike": "A pike push-up with the feet raised on a box or a bench, tipping you closer to vertical. The steeper the angle, the nearer it gets to a true handstand push-up.",
+    "push:hswall": "An upside-down hold with the heels resting on a wall for balance. Stack wrists, elbows and shoulders in one line and pull the ribs down — a banana-shaped back is the usual fault.",
+    "push:handstand": "A free-standing hold with nothing to lean on, balanced through the fingers and wrists. Balance is corrected by pressing through the fingertips, not by folding at the hips.",
+    "push:oahandstand": "A handstand held on a single arm. It needs a rock-solid two-arm handstand first, plus the shoulder strength to hold a heavy side lean while the other hand comes off the floor.",
+    "push:hspushwall": "A vertical press with the wall taking your balance: lower until the crown of the head touches the floor, then push back up. It's the strength half of the handstand push-up with the balance removed.",
+    "push:hspush": "A full overhead press done free-standing — head to the floor and back up to a handstand. You need the pressing strength and the balance to hold a handstand while it's moving.",
+    "push:hsclap": "A handstand push-up pressed hard enough to leave the floor and clap before landing. It wants explosive overhead power on top of an already reliable handstand.",
+    "push:planchelean": "A plank on straight arms with the shoulders pushed far forward, past the hands. The further you lean the more of your weight the shoulders carry, which makes it the single best drill for building planche strength.",
+    "push:pseudopp": "A push-up performed in a planche lean, hands down by the waist and shoulders well ahead of them. It teaches the body to press from the straight-arm, forward-leaning line the planche is built on.",
+    "push:hold90": "A hold with the body horizontal and the arms bent to a right angle, elbows tucked into the ribs. It sits between the planche and the handstand push-up and asks a great deal of the elbows and wrists.",
+    "push:hs90push": "A handstand push-up that pauses in a 90° hold on the way down and presses back to vertical from there. It joins the bent-arm strength of the 90° hold to handstand balance.",
+    "push:frogstand": "A balance on the hands with the knees resting on the backs of the upper arms. It's the first straight-arm balance most people manage, and the way into the planche line.",
+    "push:elbowlever": "The body held horizontal with the elbows dug into the abdomen carrying the weight. It's far more about balance and body tension than raw strength, which makes it an achievable first lever.",
+    "push:tuckplanche": "A planche with the knees pulled tight to the chest, held on straight arms with the shoulders leaning forward. Bringing the hips level with the shoulders, rather than letting them hang below, is what makes it count.",
+    "push:straddleplanche": "A planche with the legs opened wide, which shortens the lever and makes the hold lighter than the full version. It's the last step before the planche itself.",
+    "push:planche": "The body held horizontal and straight on straight arms, feet and shoulders level, touching nothing but the floor. It's one of the hardest holds in calisthenics and takes years of patient work.",
+    "push:planchepush": "A push-up performed in and out of a full planche, without the feet ever touching down. Few athletes hold a planche at all, and fewer still can press in one.",
+    "push:maltese": "A horizontal hold with the arms out to the sides at chest height instead of underneath the body. The leverage is brutal, and it's usually trained on rings.",
+    "push:oaplanche": "A full planche held on a single straight arm. It's among the rarest feats in the sport, needing planche strength and the power to resist enormous rotation at the same time.",
+
+    /* --- pull --- */
+    "pull:deadhang": "Hanging from a bar with straight arms and relaxed shoulders. It builds the grip and the shoulder tolerance every other pulling skill is built on, which is why the branch starts here.",
+    "pull:jumpneg": "Jump to the top of a pull-up, then lower yourself as slowly as you can. You're stronger lowering than lifting, so this builds the strength for a first pull-up before you have one.",
+    "pull:pullup": "Hanging with an overhand grip, pull until the chin clears the bar, then lower under control. Start every rep from a full dead hang — half reps from a bent arm are the usual way this gets easier than it should be.",
+    "pull:auspull": "A horizontal row under a low bar with the heels on the floor. The flatter your body the harder it gets, so it scales smoothly and stays useful long after full pull-ups arrive.",
+    "pull:chinup": "A pull-up with an underhand grip, hands about shoulder-width apart. The palms-up position brings the biceps in far more heavily, so most people manage a few more of these than pull-ups.",
+    "pull:oadeadhang": "Hanging from the bar by one hand. It's the grip and shoulder test that gates the one-arm pull-up, and it almost always fails at the fingers long before the shoulder.",
+    "pull:chesttobar": "A pull-up taken high enough that the chest touches the bar. Leaning back slightly and driving the elbows down through the rep is what buys the extra range.",
+    "pull:naveltobar": "A pull-up pulled all the way to the waist, the bar meeting the navel. It needs the explosive pull a muscle-up is made of, and having one is a strong sign you're close.",
+    "pull:oapull": "A full pull-up on a single arm, from a dead hang to chin over bar. It's one of the great milestones of pulling strength and usually sits years past a first pull-up.",
+    "pull:oamu": "A muscle-up performed on one arm — pulling, then pressing over the bar, unassisted. Vanishingly few athletes anywhere have one.",
+    "pull:muscleup": "A pull-up that carries on over the bar into a dip, finishing with straight arms and the chest above it. The transition is the hard part: pull high, then whip the chest forward over the bar rather than trying to press through it.",
+    "pull:mujump": "A muscle-up finished by landing in a support with the feet up on the bar. It's a control drill that teaches the top half of the transition.",
+    "pull:mubackclap": "A muscle-up explosive enough to clap the hands behind your back in mid-air. It takes far more pulling speed than the plain version, and a fast, confident re-grip.",
+    "pull:explosivemu": "A muscle-up driven so hard that the body clears the bar to the waist or beyond. It's the base every release and flight skill on the bar is built from.",
+    "pull:straddlefl": "A front lever with the legs split wide, which shortens the lever and lightens the hold. It's the last progression before the full front lever.",
+    "pull:frontlever": "Hanging from the bar with the body horizontal and face-up, straight from head to toes. It's a straight-arm hold driven by the lats and the core, and one of the signature skills of the sport.",
+    "pull:oafl": "A front lever held from a single arm. On top of the lever strength it takes serious anti-rotation power to stop the body turning under the bar.",
+    "pull:flpu": "A pull-up performed while holding the front lever, body horizontal the whole way through. It stacks the hardest static hold on the bar on top of dynamic pulling.",
+
+    /* --- legs --- */
+    "legs:lunge": "Step forward and drop the back knee towards the floor, then drive back up through the front heel. Keep the front shin roughly vertical so the knee stays over the ankle rather than travelling past the toes.",
+    "legs:squat": "Feet about shoulder-width apart, sit down between the hips until the thighs pass parallel, then stand back up. Keep the heels planted and the chest up — depth is what makes it worth doing.",
+    "legs:pistol": "A full squat on one leg with the other held straight out in front. It asks for single-leg strength, ankle mobility and balance all at once, which is why it takes most people a while.",
+    "legs:nordic": "Kneel with the ankles anchored and lower your torso towards the floor, resisting the whole way with the hamstrings alone. It's one of the most demanding hamstring exercises there is — catch yourself with your hands and push back up until you can hold the whole descent.",
+    "legs:burpee": "Squat down, kick out to a push-up, come back in and jump. It welds a squat and a push-up into a single movement, which is why the tree wants both before it opens.",
+
+    /* --- core --- */
+    "core:boathold": "Sit balanced on the tailbone with the legs and chest lifted, making a shallow V. Don't let the lower back round — drop the legs a little if it starts to, since holding the position is the whole point.",
+    "core:plank": "Hold a push-up position on the forearms with the body in one straight line. Squeeze the glutes and tuck the ribs down; a plank with sagging hips trains almost nothing.",
+    "core:legraises": "Lying flat, raise straight legs to vertical and lower them slowly without letting the lower back arch off the floor. Stop the descent where the back starts to lift, and grow the range from there.",
+    "core:hangingleg": "Hanging from a bar, raise straight legs to horizontal or higher under control. Kill the swing on the way down — the reps that count are the ones without momentum.",
+    "core:tucksit": "Supported on the hands with the knees tucked to the chest and the feet off the floor. It builds the shoulder depression and the compression an L-sit needs.",
+    "core:lsit": "Supported on straight arms with the legs held straight out in front, the body making an L. Push the floor away and lock the elbows — most people fail here on shoulder strength rather than abs.",
+    "core:lsitpull": "A pull-up performed while holding an L-sit throughout. Keeping the legs locked out in front while you pull makes it far harder than either skill on its own.",
+    "core:vsit": "An L-sit with the legs raised above hip height, folding the body into a V. It needs deep compression and the strength to hold the hips behind the hands.",
+    "core:manna": "A hold in which the legs travel past vertical and the hips sit behind the hands, arching the body back over the shoulders. It's one of the most extreme shoulder-extension positions in gymnastics.",
+    "core:humanflag": "Gripping a vertical pole and holding the body straight out sideways, parallel to the ground. The bottom arm pushes while the top arm pulls, and the obliques hold the line.",
+    "core:backlever": "Hanging from the bar and holding the body horizontal and face-down, on straight arms. Build it slowly: the position puts a long, heavy stretch through the biceps and shoulders.",
+    "core:dragonflag": "Lying on a bench and gripping behind your head, hold the body straight and lower it from vertical without bending at the hips. Anything that folds turns it into a leg raise.",
+    "core:oabacklever": "A back lever held on a single arm. The lever is hard enough on two — on one, resisting the rotation becomes the main event.",
+    "core:hefesto": "A pull from a back lever up into a support with the arms behind the back and the palms turned away. It demands extreme biceps and shoulder-extension strength, and carries real injury risk if rushed.",
+
+    /* --- cardio --- */
+    "cardio:jumpingjacks": "Jump the feet wide while swinging the arms overhead, then jump back in. It's the simplest way to lift the heart rate and warm the shoulders and hips at the same time.",
+    "cardio:highknees": "Run on the spot, driving each knee up to hip height. Stay on the balls of the feet and keep the pace quick — it's a conditioning drill, not a march.",
+    "cardio:burpee": "Drop to the floor, kick back to a push-up, jump the feet in and leap up. Full-body and relentless, it's one of the fastest ways to spike the heart rate with no equipment at all.",
+    "cardio:mountain": "From a push-up position, drive the knees to the chest one at a time, as fast as you can hold the plank. Keep the hips low — letting them ride up turns it into a rest.",
+    "cardio:sprint": "Short all-out runs separated by walking or standing recovery. Intervals build top-end conditioning far faster than steady jogging, and the recovery matters as much as the effort.",
+    "cardio:jumprope": "Skipping a turning rope with small, quick hops off the balls of the feet. It trains calves, coordination and conditioning together, and packs a lot of work into very little space.",
+    "cardio:burpeepull": "A burpee that finishes by jumping straight up into a pull-up. It ties the two branches together and is as much a conditioning test as a strength one.",
+  };
+
+  function describe(catKey, id) { return DESCRIPTIONS[`${catKey}:${id}`] || ""; }
 
   /* ------------------------------------------------------------------
      Progression rules
@@ -695,6 +793,7 @@
     levelByKey,
     skillByKey,
     skillLabel,
+    describe,
     repsOf,
     addRepsTo,
     setRepsTo,

@@ -86,7 +86,7 @@ function initWaitlist() {
    --------------------------------------------------------------------- */
 const {
   FAMILY, CATEGORIES, RANKS, REPS_PER_RANK, UNLOCK_REPS, LEVELS,
-  repsOf, addRepsTo, rankIndex, isUnlocked, prereqsOf, skillByKey, levelByKey,
+  repsOf, addRepsTo, rankIndex, isUnlocked, prereqsOf, skillByKey, levelByKey, describe,
   isFavourite, toggleFavourite, MAX_REPS_PER_ENTRY,
   hasAssessed, applyAssessment, previewUnlocked, isCleared,
 } = window.MuSkills;
@@ -790,6 +790,12 @@ function initSkillTree() {
       `<div class="pop-badge ${badgeCls}" style="--fam:${cat.color}">${unlocked ? (f.icon || "•") : LOCK_SVG}</div>` +
       `<div><h3 class="pop-name">${esc(node.label)}</h3>` +
       `<div class="pop-sub">${esc(cat.label)}${isMax ? " · Mastered" : ""}</div></div></div>`;
+
+    // What the movement actually is. Shown locked as well as open — a name
+    // on its own doesn't tell you what a Hefesto is, and the ones you can't
+    // reach yet are precisely the ones you've never done.
+    const about = describe(cat.key, node.id);
+    if (about) html += `<p class="pop-desc" style="--fam:${cat.color}">${esc(about)}</p>`;
 
     // Favourite the position — one per account, shown next to your name on
     // the leaderboard. Locked skills count too: a goal is a fine favourite.
