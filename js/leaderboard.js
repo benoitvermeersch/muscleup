@@ -2,7 +2,7 @@
    MuscleUp — the leaderboard
 
    Every registered athlete, ranked by total reps, with the branch they
-   train most and the position they've starred as their favourite.
+   train most and the exercise they've starred as their favourite.
    ===================================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {

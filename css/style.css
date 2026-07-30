@@ -808,7 +808,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .skill-lock { fill: var(--text-faint); pointer-events: none; }
 
-/* the one starred position, marked on its node */
+/* the one starred exercise, marked on its node */
 .skill-star { fill: #f3c645; pointer-events: none; }
 .skill-node.is-favourite .skill-dot {
   stroke: #f3c645;
@@ -970,7 +970,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   color: var(--text-dim);
 }
 
-/* favourite this position — one star per account, shown on the leaderboard */
+/* favourite this exercise — one star per account, shown on the leaderboard */
 .pop-fav {
   display: flex;
   align-items: center;

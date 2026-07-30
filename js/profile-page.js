@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
       `<div class="pf-mini"><span>${stats.totalReps.toLocaleString()}</span><small>total reps</small></div>` +
       `<div class="pf-mini"><span>${top ? esc(top.icon + " " + top.label) : "—"}</span><small>top branch</small></div>` +
       `<div class="pf-mini"><span>${stats.favouriteSkillLabel ? esc(stats.favouriteSkillLabel) : "—"}</span>` +
-        `<small>favourite position</small></div>`;
+        `<small>favourite exercise</small></div>`;
   }
 
   /* ---- the profile picture ----

@@ -797,12 +797,12 @@ function initSkillTree() {
     const about = describe(cat.key, node.id);
     if (about) html += `<p class="pop-desc" style="--fam:${cat.color}">${esc(about)}</p>`;
 
-    // Favourite the position — one per account, shown next to your name on
+    // Favourite the exercise — one per account, shown next to your name on
     // the leaderboard. Locked skills count too: a goal is a fine favourite.
     html += `<button type="button" id="pop-fav" class="pop-fav${starred ? " is-on" : ""}" ` +
       `aria-pressed="${starred}">` +
       `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="${STAR_PATH}"/></svg>` +
-      `<span>${starred ? "Your favourite position" : "Make this my favourite"}</span></button>`;
+      `<span>${starred ? "Your favourite exercise" : "Make this my favourite"}</span></button>`;
 
     if (!unlocked) {
       // One prerequisite reads as a single sentence; several need to say

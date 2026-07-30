@@ -163,7 +163,7 @@ the ones who have trained — ranked by total reps. Each row shows:
 - **Total reps** — everything logged across all five branches
 - **Top branch** — whichever of Push, Pull, Legs, Core or Cardio holds the
   most of those reps
-- **Favourite position** — the one skill you've starred
+- **Favourite exercise** — the one skill you've starred
 
 ### Rep limits
 
@@ -199,11 +199,11 @@ The text lives in a `DESCRIPTIONS` map in `js/skills.js`, keyed
 scannable, and keyed by branch as well as id because Burpee sits on two of
 them.
 
-### Favouriting a position
+### Favouriting an exercise
 
 Open any skill in the tree and hit **Make this my favourite**. The node
 gets a gold star and the skill's name appears next to you on the
-leaderboard. Starring another position moves the star; starring the one
+leaderboard. Starring another exercise moves the star; starring the one
 you've already starred clears it. Locked skills can be favourited too — a
 goal makes a perfectly good favourite.
 
